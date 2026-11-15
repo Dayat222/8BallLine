@@ -32,10 +32,10 @@ data class TableConfig(
     var activePocket: Pocket = Pocket.ALL,
     var bankDirection: BankDirection = BankDirection.ALL,
     var lineColor: Int = 0xFF00E5FF.toInt(), // Cyan neon
-    var lineWidth: Float = 3f,
-    var opacity: Int = 200, // 0 - 255
+    var lineWidth: Float = 1.6f,
+    var opacity: Int = 185, // 0 - 255
     var showDiamonds: Boolean = true,
-    var showHalfDiamonds: Boolean = false,
+    var showHalfDiamonds: Boolean = true,
     var showBankShotLines: Boolean = true
 ) {
     val width: Float get() = (right - left).coerceAtLeast(10f)

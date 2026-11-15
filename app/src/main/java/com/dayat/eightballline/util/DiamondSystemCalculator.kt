@@ -54,7 +54,9 @@ object DiamondSystemCalculator {
     }
 
     /**
-     * Menghitung titik tengah (half-diamond: 0.5, 1.5, 2.5, ...) di antara setiap dua titik yang ada.
+     * Menghitung titik tengah (half-diamond) di antara titik-titik diamond yang sudah ada:
+     * - Rel panjang (9 titik: 0..8): 1.5, 2.5, 3.5, 4.5, 5.5, 6.5 (tanpa 0.5 & 7.5 di pojok lubang).
+     * - Rel pendek (5 titik: 0..4): 1.5, 2.5 (tanpa 0.5 & 3.5 di pojok lubang).
      */
     fun getHalfDiamondPoints(config: TableConfig): Map<String, List<PointF2D>> {
         val mainPoints = getDiamondPoints(config)
@@ -62,7 +64,8 @@ object DiamondSystemCalculator {
 
         for ((railName, points) in mainPoints) {
             val midPoints = mutableListOf<PointF2D>()
-            for (i in 0 until points.size - 1) {
+            // Mulai dari index 1 sampai size - 3 agar hanya di antara titik diamond (1-2, 2-3, dst.)
+            for (i in 1 until points.size - 2) {
                 val p1 = points[i]
                 val p2 = points[i + 1]
                 midPoints.add(PointF2D((p1.x + p2.x) / 2f, (p1.y + p2.y) / 2f))
@@ -266,7 +269,7 @@ object DiamondSystemCalculator {
                         start = startPos,
                         cushionHit1 = hitHalf,
                         targetPocket = targetPocketPos,
-                        label = "T${idx}.5",
+                        label = "T${idx + 1}.5",
                         pocketType = pocketType,
                         isHalfDiamond = true
                     )

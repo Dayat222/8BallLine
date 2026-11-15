@@ -37,6 +37,11 @@ class TableOverlayView(context: Context) : View(context) {
         strokeCap = Paint.Cap.ROUND
     }
 
+    private val gridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeWidth = 1f
+    }
+
     private val cushionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f
@@ -122,8 +127,12 @@ class TableOverlayView(context: Context) : View(context) {
         linePaint.strokeWidth = config.lineWidth
 
         halfLinePaint.color = config.lineColor
-        halfLinePaint.alpha = (config.opacity * 0.65f).toInt().coerceIn(20, 255)
-        halfLinePaint.strokeWidth = (config.lineWidth * 0.65f).coerceAtLeast(1.5f)
+        halfLinePaint.alpha = (config.opacity * 0.60f).toInt().coerceIn(20, 255)
+        halfLinePaint.strokeWidth = (config.lineWidth * 0.72f).coerceAtLeast(1.0f)
+
+        gridLinePaint.color = config.lineColor
+        gridLinePaint.alpha = (config.opacity * 0.20f).toInt().coerceIn(10, 80)
+        gridLinePaint.strokeWidth = 1f
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -132,8 +141,23 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
-        // 1. Gambar Batas Meja (Cushions)
+        // 1. Gambar Batas Meja (Cushions) & Grid Penghubung Diamond Tipis
         canvas.drawRect(config.left, config.top, config.right, config.bottom, cushionPaint)
+        val diamonds = DiamondSystemCalculator.getDiamondPoints(config)
+        val topPts = diamonds["top"]
+        val bottomPts = diamonds["bottom"]
+        val leftPts = diamonds["left"]
+        val rightPts = diamonds["right"]
+        if (topPts != null && bottomPts != null && topPts.size == bottomPts.size) {
+            for (i in 1 until topPts.size - 1) {
+                canvas.drawLine(topPts[i].x, topPts[i].y, bottomPts[i].x, bottomPts[i].y, gridLinePaint)
+            }
+        }
+        if (leftPts != null && rightPts != null && leftPts.size == rightPts.size) {
+            for (i in 1 until leftPts.size - 1) {
+                canvas.drawLine(leftPts[i].x, leftPts[i].y, rightPts[i].x, rightPts[i].y, gridLinePaint)
+            }
+        }
 
         // 2. Gambar Lubang (6 Pockets)
         val pockets = DiamondSystemCalculator.getPocketPositions(config)
@@ -163,7 +187,6 @@ class TableOverlayView(context: Context) : View(context) {
 
         // 4. Gambar Diamond Points & Label Titik
         if (config.showDiamonds) {
-            val diamonds = DiamondSystemCalculator.getDiamondPoints(config)
             for ((railName, points) in diamonds) {
                 for ((idx, pt) in points.withIndex()) {
                     if (idx == 0 || idx == points.size - 1) continue // Pocket corners
