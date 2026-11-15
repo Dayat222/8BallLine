@@ -184,7 +184,7 @@
                 android:layout_marginVertical="5dp"
                 android:background="@color/surface_card_border" />
 
-            <!-- Toggle Garis Pantul -->
+            <!-- Toggle Garis Bidik Pin -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -195,36 +195,12 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="Garis Pantul"
+                    android:text="Garis Bidik Pin"
                     android:textColor="@color/text_primary"
                     android:textSize="11sp" />
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchLines"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:scaleX="0.82"
-                    android:scaleY="0.82" />
-            </LinearLayout>
-
-            <!-- Toggle Garis Titik Tengah (Half Diamonds) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Garis Tengah (0.5)"
-                    android:textColor="@color/text_primary"
-                    android:textSize="11sp" />
-
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/switchHalfDiamonds"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"

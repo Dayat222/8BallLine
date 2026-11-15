@@ -30,10 +30,10 @@ class FloatingMenuManager(
     private val menuView: View = LayoutInflater.from(themedContext).inflate(R.layout.view_floating_menu, null)
     private lateinit var layoutParams: WindowManager.LayoutParams
 
-    // Aim Pin (Bidik Bola) window
+    // Aim Pin (Bidik Bola) window — aktif langsung sebagai mode utama
     private val aimPinView: View = LayoutInflater.from(themedContext).inflate(R.layout.view_aim_pin, null)
     private lateinit var aimPinParams: WindowManager.LayoutParams
-    private var isAimPinActive = false
+    private var isAimPinActive = true
 
     // Mini 1-Tap Quick Dock
     private val layoutBubble: View = menuView.findViewById(R.id.layoutBubble)
@@ -52,7 +52,6 @@ class FloatingMenuManager(
     private val layoutExpandedPanel: View = menuView.findViewById(R.id.layoutExpandedPanel)
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
-    private val switchHalfDiamonds: SwitchCompat = menuView.findViewById(R.id.switchHalfDiamonds)
     private val switchColorByPocket: SwitchCompat = menuView.findViewById(R.id.switchColorByPocket)
 
     private val btnPocketTL: TextView = menuView.findViewById(R.id.btnPocketTL)
@@ -145,6 +144,7 @@ class FloatingMenuManager(
         }
 
         val pinSizePx = (42 * themedContext.resources.displayMetrics.density).toInt()
+        val initCenter = getDefaultAimCenter()
         aimPinParams = WindowManager.LayoutParams(
             pinSizePx,
             pinSizePx,
@@ -155,10 +155,10 @@ class FloatingMenuManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 400
-            y = 400
+            x = (initCenter.x - pinSizePx / 2f).toInt()
+            y = (initCenter.y - pinSizePx / 2f).toInt()
         }
-        aimPinView.visibility = View.GONE
+        aimPinView.visibility = if (isAimPinActive) View.VISIBLE else View.GONE
 
         setupMiniDock()
         setupAimPinDrag()
@@ -169,6 +169,43 @@ class FloatingMenuManager(
 
         windowManager.addView(menuView, layoutParams)
         windowManager.addView(aimPinView, aimPinParams)
+
+        overlayView.onViewSizeChanged = { w, h ->
+            if (isAimPinActive) {
+                if (aimPinParams.x < 0 || aimPinParams.x > w - pinSizePx ||
+                    aimPinParams.y < 0 || aimPinParams.y > h - pinSizePx
+                ) {
+                    centerAimPinInView(w, h)
+                } else {
+                    aimPinView.post { syncAimTargetFromPin() }
+                }
+            }
+        }
+
+        if (isAimPinActive) {
+            overlayView.aimTarget = initCenter
+            aimPinView.post { syncAimTargetFromPin() }
+        }
+    }
+
+    private fun getDefaultAimCenter(): PointF2D {
+        val w = overlayView.width.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.widthPixels
+        val h = overlayView.height.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
+        val cx = ((overlayView.config.left + overlayView.config.right) / 2f).coerceIn(40f, (w - 40f).coerceAtLeast(40f))
+        val cy = ((overlayView.config.top + overlayView.config.bottom) / 2f).coerceIn(40f, (h - 40f).coerceAtLeast(40f))
+        return PointF2D(cx, cy)
+    }
+
+    private fun centerAimPinInView(viewW: Int, viewH: Int) {
+        val pinW = aimPinParams.width
+        val pinH = aimPinParams.height
+        val cx = ((overlayView.config.left + overlayView.config.right) / 2f).coerceIn(40f, (viewW - 40f).coerceAtLeast(40f))
+        val cy = ((overlayView.config.top + overlayView.config.bottom) / 2f).coerceIn(40f, (viewH - 40f).coerceAtLeast(40f))
+        aimPinParams.x = (cx - pinW / 2f).toInt()
+        aimPinParams.y = (cy - pinH / 2f).toInt()
+        safeUpdateAimPinLayout()
+        overlayView.aimTarget = PointF2D(cx, cy)
+        aimPinView.post { syncAimTargetFromPin() }
     }
 
     private fun attachDragOrClick(target: View, onClick: () -> Unit) {
@@ -268,16 +305,10 @@ class FloatingMenuManager(
     private fun toggleAimPin() {
         isAimPinActive = !isAimPinActive
         if (isAimPinActive) {
-            val pinW = aimPinParams.width
-            val pinH = aimPinParams.height
-            val centerX = (overlayView.config.left + overlayView.config.right) / 2f
-            val centerY = (overlayView.config.top + overlayView.config.bottom) / 2f
-            aimPinParams.x = (centerX - pinW / 2f).toInt()
-            aimPinParams.y = (centerY - pinH / 2f).toInt()
+            val w = overlayView.width.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.widthPixels
+            val h = overlayView.height.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
             aimPinView.visibility = View.VISIBLE
-            safeUpdateAimPinLayout()
-            overlayView.aimTarget = PointF2D(centerX, centerY)
-            aimPinView.post { syncAimTargetFromPin() }
+            centerAimPinInView(w, h)
         } else {
             aimPinView.visibility = View.GONE
             overlayView.aimTarget = null
@@ -313,18 +344,10 @@ class FloatingMenuManager(
             collapseMenu()
         }
 
-        // Toggle Garis Pantul
+        // Toggle Garis Bidik Pin
         switchLines.isChecked = overlayView.config.showBankShotLines
         switchLines.setOnCheckedChangeListener { _, isChecked ->
             overlayView.config.showBankShotLines = isChecked
-            overlayView.invalidate()
-            prefs.saveConfig(overlayView.config)
-        }
-
-        // Toggle Garis Titik Tengah (Half-Diamonds)
-        switchHalfDiamonds.isChecked = overlayView.config.showHalfDiamonds
-        switchHalfDiamonds.setOnCheckedChangeListener { _, isChecked ->
-            overlayView.config.showHalfDiamonds = isChecked
             overlayView.invalidate()
             prefs.saveConfig(overlayView.config)
         }

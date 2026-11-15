@@ -32,6 +32,7 @@ class TableOverlayView(context: Context) : View(context) {
         }
 
     var onCalibrationChanged: ((TableConfig) -> Unit)? = null
+    var onViewSizeChanged: ((Int, Int) -> Unit)? = null
 
     // Paints
     private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -135,6 +136,9 @@ class TableOverlayView(context: Context) : View(context) {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         // Jangan mengubah atau melakukan clamp koordinat kalibrasi tersimpan saat orientasi berubah
+        if (w > 0 && h > 0) {
+            onViewSizeChanged?.invoke(w, h)
+        }
         invalidate()
     }
 
@@ -173,100 +177,31 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
-        // 1. Gambar Batas Meja (Cushions) & Grid Penghubung Diamond + Tick Marks (seperti stiker referensi)
-        canvas.drawRect(config.left, config.top, config.right, config.bottom, cushionPaint)
-        val tickLen = 10f
-        val diamonds = DiamondSystemCalculator.getDiamondPoints(config)
-        val topPts = diamonds["top"]
-        val bottomPts = diamonds["bottom"]
-        val leftPts = diamonds["left"]
-        val rightPts = diamonds["right"]
-        if (topPts != null && bottomPts != null && topPts.size == bottomPts.size) {
-            for (i in 1 until topPts.size - 1) {
-                canvas.drawLine(
-                    topPts[i].x, topPts[i].y - tickLen,
-                    bottomPts[i].x, bottomPts[i].y + tickLen,
-                    gridLinePaint
-                )
-            }
-        }
-        if (leftPts != null && rightPts != null && leftPts.size == rightPts.size) {
-            for (i in 1 until leftPts.size - 1) {
-                canvas.drawLine(
-                    leftPts[i].x - tickLen, leftPts[i].y,
-                    rightPts[i].x + tickLen, rightPts[i].y,
-                    gridLinePaint
-                )
-            }
-        }
-
-        // 2. Gambar Lubang (6 Pockets) dengan warna penanda
+        // 1. Gambar Lubang (6 Pockets) dengan warna penanda
         val pockets = DiamondSystemCalculator.getPocketPositions(config)
         for ((pocketType, pos) in pockets) {
             pocketPaint.color = if (config.colorByPocket) getPocketColor(pocketType) else 0xFFFFD700.toInt()
             canvas.drawCircle(pos.x, pos.y, 22f, pocketPaint)
         }
 
-        // 3. Gambar Garis Pantulan (Bank Shot Trajectories)
+        // 2. Gambar Jalur Pin Bidik Bola (1-cushion akurat melalui titik bola target)
         val activeAimTarget = aimTarget
-        if (config.showBankShotLines) {
-            val trajectories = DiamondSystemCalculator.calculateTrajectories(config)
-            // Jika mode Bidik Bola aktif, redupkan garis statis agar jalur bidikan utama sangat menonjol
-            val dimFactor = if (activeAimTarget != null) 0.32f else 1.0f
-            val mainAlpha = (config.opacity * dimFactor).toInt().coerceIn(15, 255)
-            val halfAlpha = (config.opacity * 0.68f * dimFactor).toInt().coerceIn(12, 255)
-            val bounceLegWidth = (config.lineWidth * 0.65f).coerceAtLeast(1.2f)
-
-            for (traj in trajectories) {
-                val activePaint = if (traj.isHalfDiamond) halfLinePaint else linePaint
-                if (config.colorByPocket) {
-                    activePaint.color = getPocketColor(traj.pocketType)
-                } else {
-                    activePaint.color = config.lineColor
-                }
-                activePaint.alpha = if (traj.isHalfDiamond) halfAlpha else mainAlpha
-                activePaint.strokeWidth = if (traj.isHalfDiamond) {
-                    (config.lineWidth * 0.72f).coerceAtLeast(1.3f)
-                } else {
-                    config.lineWidth
-                }
-
-                // Sinar datang / arah bidik
-                canvas.drawLine(
-                    traj.start.x, traj.start.y,
-                    traj.cushionHit1.x, traj.cushionHit1.y,
-                    activePaint
-                )
-
-                // Sinar pantul menuju lubang dibuat sedikit lebih tipis agar arah pantul mudah dibedakan
-                if (!traj.isHalfDiamond) {
-                    activePaint.strokeWidth = bounceLegWidth
-                }
-                canvas.drawLine(
-                    traj.cushionHit1.x, traj.cushionHit1.y,
-                    traj.targetPocket.x, traj.targetPocket.y,
-                    activePaint
-                )
-            }
-        }
-
-        // 3b. Gambar Jalur Bidik Tepat melalui Pin Target Bola (jika aktif)
-        if (activeAimTarget != null) {
+        if (config.showBankShotLines && activeAimTarget != null) {
             val aimTrajectories = DiamondSystemCalculator.calculateAimPinTrajectories(config, activeAimTarget)
             for (traj in aimTrajectories) {
                 val trajColor = if (config.colorByPocket) getPocketColor(traj.pocketType) else config.lineColor
                 aimPinLinePaint.color = trajColor
-                aimPinLinePaint.alpha = 255
-                aimPinLinePaint.strokeWidth = (config.lineWidth * 1.45f).coerceAtLeast(3.5f)
+                aimPinLinePaint.alpha = config.opacity
+                aimPinLinePaint.strokeWidth = config.lineWidth
 
-                // Garis dari bola ke titik pantul rel
+                // Garis datang: bola target -> titik pantul bantalan
                 canvas.drawLine(
                     traj.start.x, traj.start.y,
                     traj.cushionHit1.x, traj.cushionHit1.y,
                     aimPinLinePaint
                 )
-                // Garis pantul dari rel ke lubang
-                aimPinLinePaint.strokeWidth = (config.lineWidth * 1.15f).coerceAtLeast(2.6f)
+                // Garis pantul: titik pantul bantalan -> lubang
+                aimPinLinePaint.strokeWidth = (config.lineWidth * 0.78f).coerceAtLeast(1.5f)
                 canvas.drawLine(
                     traj.cushionHit1.x, traj.cushionHit1.y,
                     traj.targetPocket.x, traj.targetPocket.y,
@@ -275,22 +210,23 @@ class TableOverlayView(context: Context) : View(context) {
 
                 // Titik pantul terang pada bantalan
                 bounceDotPaint.color = 0xFFFFFFFF.toInt()
-                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 8f, bounceDotPaint)
+                bounceDotPaint.alpha = config.opacity
+                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 7.5f, bounceDotPaint)
                 bounceDotPaint.color = trajColor
-                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 5f, bounceDotPaint)
+                bounceDotPaint.alpha = config.opacity
+                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 4.8f, bounceDotPaint)
             }
         }
 
-        // 4. Gambar Diamond Points & Label Titik
-        if (config.showDiamonds) {
+        // 3. Elemen Meja & Handle Kalibrasi (hanya tampil saat Mode Kalibrasi aktif)
+        if (isCalibrationMode) {
+            canvas.drawRect(config.left, config.top, config.right, config.bottom, cushionPaint)
+
+            val diamonds = DiamondSystemCalculator.getDiamondPoints(config)
             for ((railName, points) in diamonds) {
                 for ((idx, pt) in points.withIndex()) {
-                    if (idx == 0 || idx == points.size - 1) continue // Pocket corners
-
-                    // Lingkaran diamond
-                    canvas.drawCircle(pt.x, pt.y, 6f, diamondPaint)
-
-                    // Label nomor titik (Titik 1, 2, 3, 4, 5, 6, 7)
+                    if (idx == 0 || idx == points.size - 1) continue
+                    canvas.drawCircle(pt.x, pt.y, 5f, diamondPaint)
                     val label = if (idx == 4 && points.size > 5) "T4" else "T$idx"
                     val offsetY = when (railName) {
                         "top" -> -14f
@@ -306,17 +242,6 @@ class TableOverlayView(context: Context) : View(context) {
                 }
             }
 
-            // Titik tengah (half-diamonds) di antara titik-titik utama tetap ditampilkan di rel sebagai patokan
-            val halfDiamonds = DiamondSystemCalculator.getHalfDiamondPoints(config)
-            for ((_, points) in halfDiamonds) {
-                for (pt in points) {
-                    canvas.drawCircle(pt.x, pt.y, 3.8f, halfDiamondPaint)
-                }
-            }
-        }
-
-        // 5. Gambar Handle Kalibrasi (jika dalam Mode Kalibrasi)
-        if (isCalibrationMode) {
             val midX = (config.left + config.right) / 2f
             val midY = (config.top + config.bottom) / 2f
 
