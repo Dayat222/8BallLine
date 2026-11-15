@@ -19,4 +19,7 @@
     <string name="step_3">3. Tekan ikon melayang 8BallLine, pilih \'Mode Kalibrasi\' dan sesuaikan 4 titik sudut merah agar tepat di tepi bantalan (cushion) meja.</string>
     <string name="step_4">4. Setelah pas, tekan \'Kunci Meja\' untuk bermain tanpa hambatan sentuhan.</string>
     <string name="step_5">5. Sejajarkan stik dengan garis Titik 1 s/d 6 untuk tembakan pantulan (bank shot) presisi.</string>
+    <string name="ota_title">Pembaruan Aplikasi (OTA)</string>
+    <string name="ota_check_btn">Cek Update Terbaru</string>
+    <string name="ota_checking">Memeriksa pembaruan dari GitHub...</string>
 </resources>
