@@ -51,6 +51,12 @@ class TableOverlayView(context: Context) : View(context) {
         strokeCap = Paint.Cap.ROUND
     }
 
+    private val directLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+        pathEffect = DashPathEffect(floatArrayOf(16f, 10f), 0f)
+    }
+
     private val bounceDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
     }
@@ -184,15 +190,27 @@ class TableOverlayView(context: Context) : View(context) {
             canvas.drawCircle(pos.x, pos.y, 22f, pocketPaint)
         }
 
-        // 2. Gambar Jalur Pin Bidik Bola (0 = Langsung, 1 / 2 / 3 pantulan)
+        // 2. Gambar Jalur Pin Bidik Bola (kombinasi 0 = Langsung, 1 / 2 / 3 pantulan)
         val activeAimTarget = aimTarget
         if (config.showBankShotLines && activeAimTarget != null) {
             val aimTrajectories = DiamondSystemCalculator.calculateAimPinTrajectories(config, activeAimTarget)
+            val hasBounceLines = config.enabledBounces.any { it in 1..3 }
             for (traj in aimTrajectories) {
                 val pts = traj.points
                 if (pts.size < 2) continue
 
                 val trajColor = if (config.colorByPocket) getPocketColor(traj.pocketType) else config.lineColor
+                val isDirectShot = pts.size == 2
+
+                if (isDirectShot && hasBounceLines) {
+                    // Saat digabung dengan garis pantul, garis langsung digambar putus-putus agar mudah dibedakan
+                    directLinePaint.color = trajColor
+                    directLinePaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(40, 255)
+                    directLinePaint.strokeWidth = (config.lineWidth * 0.85f).coerceAtLeast(1.6f)
+                    canvas.drawLine(pts[0].x, pts[0].y, pts[1].x, pts[1].y, directLinePaint)
+                    continue
+                }
+
                 aimPinLinePaint.color = trajColor
                 aimPinLinePaint.alpha = config.opacity
 

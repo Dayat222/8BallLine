@@ -220,7 +220,8 @@ object DiamondSystemCalculator {
         val result = mutableListOf<BankTrajectory>()
         val pockets = getPocketPositions(config)
         val activeFilter = config.activePocket
-        val bounceCount = config.bounceCount.coerceIn(0, 3)
+        val activeBounces = config.enabledBounces.filter { it in 0..3 }.sorted()
+        if (activeBounces.isEmpty()) return result
 
         val includeTopBottom = config.bankDirection == BankDirection.ALL ||
                 config.bankDirection == BankDirection.TOP_BOTTOM
@@ -239,55 +240,57 @@ object DiamondSystemCalculator {
                 continue
             }
 
-            if (bounceCount == 0) {
-                result.add(
-                    BankTrajectory(
-                        start = clampedBall,
-                        cushionHit1 = pocketPos,
-                        targetPocket = pocketPos,
-                        label = "Langsung",
-                        pocketType = pocketType,
-                        isHalfDiamond = false,
-                        points = listOf(clampedBall, pocketPos)
+            for (bounceCount in activeBounces) {
+                if (bounceCount == 0) {
+                    result.add(
+                        BankTrajectory(
+                            start = clampedBall,
+                            cushionHit1 = pocketPos,
+                            targetPocket = pocketPos,
+                            label = "Langsung",
+                            pocketType = pocketType,
+                            isHalfDiamond = false,
+                            points = listOf(clampedBall, pocketPos)
+                        )
                     )
-                )
-                continue
-            }
+                    continue
+                }
 
-            val firstEdges = mutableListOf<RailEdge>()
-            if (includeTopBottom) {
-                firstEdges.add(RailEdge.TOP)
-                firstEdges.add(RailEdge.BOTTOM)
-            }
-            if (includeLeftRight) {
-                firstEdges.add(RailEdge.LEFT)
-                firstEdges.add(RailEdge.RIGHT)
-            }
+                val firstEdges = mutableListOf<RailEdge>()
+                if (includeTopBottom) {
+                    firstEdges.add(RailEdge.TOP)
+                    firstEdges.add(RailEdge.BOTTOM)
+                }
+                if (includeLeftRight) {
+                    firstEdges.add(RailEdge.LEFT)
+                    firstEdges.add(RailEdge.RIGHT)
+                }
 
-            val validLastEdges = getValidLastEdgesForPocket(config, pocketPos)
-            val sequences = buildEdgeSequences(firstEdges, validLastEdges, bounceCount)
+                val validLastEdges = getValidLastEdgesForPocket(config, pocketPos)
+                val sequences = buildEdgeSequences(firstEdges, validLastEdges, bounceCount)
 
-            for (seq in sequences) {
-                val path = traceMultiBouncePath(
-                    config = config,
-                    ballPos = clampedBall,
-                    pocketPos = pocketPos,
-                    edgeSequence = seq,
-                    allPockets = allPocketPositions
-                ) ?: continue
+                for (seq in sequences) {
+                    val path = traceMultiBouncePath(
+                        config = config,
+                        ballPos = clampedBall,
+                        pocketPos = pocketPos,
+                        edgeSequence = seq,
+                        allPockets = allPocketPositions
+                    ) ?: continue
 
-                result.add(
-                    BankTrajectory(
-                        start = path.first(),
-                        cushionHit1 = path[1],
-                        cushionHit2 = if (path.size > 3) path[2] else null,
-                        targetPocket = path.last(),
-                        label = "${bounceCount}P",
-                        pocketType = pocketType,
-                        isHalfDiamond = false,
-                        points = path
+                    result.add(
+                        BankTrajectory(
+                            start = path.first(),
+                            cushionHit1 = path[1],
+                            cushionHit2 = if (path.size > 3) path[2] else null,
+                            targetPocket = path.last(),
+                            label = "${bounceCount}P",
+                            pocketType = pocketType,
+                            isHalfDiamond = false,
+                            points = path
+                        )
                     )
-                )
+                }
             }
         }
 

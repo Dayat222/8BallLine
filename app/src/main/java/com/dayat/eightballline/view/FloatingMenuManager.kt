@@ -520,7 +520,12 @@ class FloatingMenuManager(
     }
 
     private fun selectBounceCount(bounce: Int) {
-        overlayView.config.bounceCount = bounce.coerceIn(0, 3)
+        val set = overlayView.config.enabledBounces
+        if (bounce in set) {
+            set.remove(bounce)
+        } else {
+            set.add(bounce)
+        }
         overlayView.invalidate()
         prefs.saveConfig(overlayView.config)
         updateBounceHighlights()
@@ -537,18 +542,19 @@ class FloatingMenuManager(
 
     private fun updateBounceHighlights() {
         val density = themedContext.resources.displayMetrics.density
-        val active = overlayView.config.bounceCount
+        val activeSet = overlayView.config.enabledBounces
 
         for ((btn, bounce) in bounceButtons + quickBounceButtons) {
-            val isSelected = bounce == active
+            val isSelected = bounce in activeSet
+            val activeColor = if (bounce == 0) 0xFF10B981.toInt() else 0xFFF59E0B.toInt()
             btn.setTextColor(if (isSelected) 0xFF000000.toInt() else 0xFFE2E8F0.toInt())
             btn.background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 5f * density
-                setColor(if (isSelected) 0xFFF59E0B.toInt() else 0xFF111827.toInt())
+                setColor(if (isSelected) activeColor else 0xFF111827.toInt())
                 setStroke(
                     ((if (isSelected) 1.5f else 0.8f) * density).toInt(),
-                    if (isSelected) 0xFFF59E0B.toInt() else 0x33FFFFFF
+                    if (isSelected) activeColor else 0x33FFFFFF
                 )
             }
         }

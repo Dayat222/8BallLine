@@ -378,12 +378,12 @@
                 android:textSize="10sp"
                 android:textStyle="bold" />
 
-            <!-- 1-Tap Jumlah Pantulan -->
+            <!-- 1-Tap Multi-Select Jumlah Pantulan -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Mode Pantulan:"
+                android:text="Mode Garis (Bisa Gabung):"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
