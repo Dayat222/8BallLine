@@ -1,9 +1,11 @@
 package com.dayat.eightballline.util
 
+import com.dayat.eightballline.model.BankDirection
 import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.model.TableOrientation
+import kotlin.math.abs
 
 data class BankTrajectory(
     val start: PointF2D,
@@ -11,15 +13,20 @@ data class BankTrajectory(
     val cushionHit2: PointF2D? = null,
     val targetPocket: PointF2D,
     val label: String,
-    val pocketType: Pocket
+    val pocketType: Pocket,
+    val isHalfDiamond: Boolean = false
 )
 
 object DiamondSystemCalculator {
 
+    private enum class RailEdge {
+        TOP, BOTTOM, LEFT, RIGHT
+    }
+
     /**
-     * Menghitung posisi semua diamond (titik pantul) pada rel meja biliar.
-     * Long rail: dibagi 8 segmen (3 diamond di paruh pertama, lubang tengah = titik 4, 3 diamond di paruh kedua).
-     * Short rail: dibagi 4 segmen (3 diamond).
+     * Menghitung posisi semua diamond utama pada rel meja biliar.
+     * Long rail: dibagi 8 segmen (titik 1-3, lubang tengah = titik 4, titik 5-7).
+     * Short rail: dibagi 4 segmen (titik 1-3).
      */
     fun getDiamondPoints(config: TableConfig): Map<String, List<PointF2D>> {
         val l = config.left
@@ -32,28 +39,35 @@ object DiamondSystemCalculator {
         val result = mutableMapOf<String, List<PointF2D>>()
 
         if (config.orientation == TableOrientation.LANDSCAPE) {
-            // Rel Panjang: Top & Bottom (8 segmen)
-            val topRail = (0..8).map { i -> PointF2D(l + (w / 8f) * i, t) }
-            val bottomRail = (0..8).map { i -> PointF2D(l + (w / 8f) * i, b) }
-            // Rel Pendek: Left & Right (4 segmen)
-            val leftRail = (0..4).map { i -> PointF2D(l, t + (h / 4f) * i) }
-            val rightRail = (0..4).map { i -> PointF2D(r, t + (h / 4f) * i) }
-
-            result["top"] = topRail
-            result["bottom"] = bottomRail
-            result["left"] = leftRail
-            result["right"] = rightRail
+            result["top"] = (0..8).map { i -> PointF2D(l + (w / 8f) * i, t) }
+            result["bottom"] = (0..8).map { i -> PointF2D(l + (w / 8f) * i, b) }
+            result["left"] = (0..4).map { i -> PointF2D(l, t + (h / 4f) * i) }
+            result["right"] = (0..4).map { i -> PointF2D(r, t + (h / 4f) * i) }
         } else {
-            // PORTRAIT: Rel Panjang: Left & Right (8 segmen), Rel Pendek: Top & Bottom (4 segmen)
-            val leftRail = (0..8).map { i -> PointF2D(l, t + (h / 8f) * i) }
-            val rightRail = (0..8).map { i -> PointF2D(r, t + (h / 8f) * i) }
-            val topRail = (0..4).map { i -> PointF2D(l + (w / 4f) * i, t) }
-            val bottomRail = (0..4).map { i -> PointF2D(l + (w / 4f) * i, b) }
+            result["left"] = (0..8).map { i -> PointF2D(l, t + (h / 8f) * i) }
+            result["right"] = (0..8).map { i -> PointF2D(r, t + (h / 8f) * i) }
+            result["top"] = (0..4).map { i -> PointF2D(l + (w / 4f) * i, t) }
+            result["bottom"] = (0..4).map { i -> PointF2D(l + (w / 4f) * i, b) }
+        }
 
-            result["top"] = topRail
-            result["bottom"] = bottomRail
-            result["left"] = leftRail
-            result["right"] = rightRail
+        return result
+    }
+
+    /**
+     * Menghitung titik tengah (half-diamond: 0.5, 1.5, 2.5, ...) di antara setiap dua titik yang ada.
+     */
+    fun getHalfDiamondPoints(config: TableConfig): Map<String, List<PointF2D>> {
+        val mainPoints = getDiamondPoints(config)
+        val result = mutableMapOf<String, List<PointF2D>>()
+
+        for ((railName, points) in mainPoints) {
+            val midPoints = mutableListOf<PointF2D>()
+            for (i in 0 until points.size - 1) {
+                val p1 = points[i]
+                val p2 = points[i + 1]
+                midPoints.add(PointF2D((p1.x + p2.x) / 2f, (p1.y + p2.y) / 2f))
+            }
+            result[railName] = midPoints
         }
 
         return result
@@ -74,8 +88,8 @@ object DiamondSystemCalculator {
                 Pocket.TOP_RIGHT to PointF2D(r, t),
                 Pocket.BOTTOM_LEFT to PointF2D(l, b),
                 Pocket.BOTTOM_RIGHT to PointF2D(r, b),
-                Pocket.MIDDLE_LEFT to PointF2D(l + config.width / 2f, t), // Middle Top
-                Pocket.MIDDLE_RIGHT to PointF2D(l + config.width / 2f, b)  // Middle Bottom
+                Pocket.MIDDLE_LEFT to PointF2D(l + config.width / 2f, t),   // Tengah Atas
+                Pocket.MIDDLE_RIGHT to PointF2D(l + config.width / 2f, b)   // Tengah Bawah
             )
         } else {
             mapOf(
@@ -83,141 +97,102 @@ object DiamondSystemCalculator {
                 Pocket.TOP_RIGHT to PointF2D(r, t),
                 Pocket.BOTTOM_LEFT to PointF2D(l, b),
                 Pocket.BOTTOM_RIGHT to PointF2D(r, b),
-                Pocket.MIDDLE_LEFT to PointF2D(l, t + config.height / 2f),
-                Pocket.MIDDLE_RIGHT to PointF2D(r, t + config.height / 2f)
+                Pocket.MIDDLE_LEFT to PointF2D(l, t + config.height / 2f),  // Tengah Kiri
+                Pocket.MIDDLE_RIGHT to PointF2D(r, t + config.height / 2f)  // Tengah Kanan
             )
         }
     }
 
     /**
-     * Menghasilkan garis pantulan (bank shot trajectories) sesuai Diamond System
-     * seperti yang ditunjukkan di tutorial video rikisenjaya8bp.
+     * Menghasilkan garis pantulan 1-cushion untuk arah Atas/Bawah maupun Kiri/Kanan,
+     * termasuk titik tengah (half-diamond) di antara titik-titik utama.
      */
     fun calculateTrajectories(config: TableConfig): List<BankTrajectory> {
         val trajectories = mutableListOf<BankTrajectory>()
         val pockets = getPocketPositions(config)
         val diamonds = getDiamondPoints(config)
+        val halfDiamonds = if (config.showHalfDiamonds) getHalfDiamondPoints(config) else emptyMap()
 
         val activeFilter = config.activePocket
+        val includeTopBottom = config.bankDirection == BankDirection.ALL ||
+                config.bankDirection == BankDirection.TOP_BOTTOM
+        val includeLeftRight = config.bankDirection == BankDirection.ALL ||
+                config.bankDirection == BankDirection.LEFT_RIGHT
 
-        // Hitung garis pantul 1-cushion untuk lubang yang aktif
         for ((pocketType, targetPocketPos) in pockets) {
             if (activeFilter != Pocket.ALL && activeFilter != pocketType) {
                 continue
             }
 
-            // Cushion pantul seberang (opposite rails)
-            if (config.orientation == TableOrientation.LANDSCAPE) {
-                // Untuk lubang di bawah (BOTTOM_LEFT, BOTTOM_RIGHT), pantulan via Top Rail
-                if (pocketType == Pocket.BOTTOM_LEFT || pocketType == Pocket.BOTTOM_RIGHT) {
-                    val topRail = diamonds["top"] ?: continue
-                    val virtualPocket = PointF2D(targetPocketPos.x, 2 * config.top - targetPocketPos.y)
+            // 1. Pantulan Atas <-> Bawah (via Top Rail & Bottom Rail)
+            if (includeTopBottom) {
+                val isBottomPocket = pocketType == Pocket.BOTTOM_LEFT ||
+                        pocketType == Pocket.BOTTOM_RIGHT ||
+                        (config.orientation == TableOrientation.LANDSCAPE && pocketType == Pocket.MIDDLE_RIGHT)
+                val isTopPocket = pocketType == Pocket.TOP_LEFT ||
+                        pocketType == Pocket.TOP_RIGHT ||
+                        (config.orientation == TableOrientation.LANDSCAPE && pocketType == Pocket.MIDDLE_LEFT)
+                val isSideMiddleInPortrait = config.orientation == TableOrientation.PORTRAIT &&
+                        (pocketType == Pocket.MIDDLE_LEFT || pocketType == Pocket.MIDDLE_RIGHT)
 
-                    for (idx in 1..7) {
-                        if (idx == 4) continue // Titik 4 adalah lubang tengah
-                        val hitDiamond = topRail[idx]
-                        // Garis datang dari rel bawah atau seberang melalui titik pantul
-                        val startPos = lineIntersectionWithRail(
-                            p1 = virtualPocket,
-                            p2 = hitDiamond,
-                            railY = config.bottom,
-                            minX = config.left,
-                            maxX = config.right
-                        ) ?: continue
-
-                        trajectories.add(
-                            BankTrajectory(
-                                start = startPos,
-                                cushionHit1 = hitDiamond,
-                                targetPocket = targetPocketPos,
-                                label = "Titik $idx",
-                                pocketType = pocketType
-                            )
-                        )
-                    }
+                if (isBottomPocket || isSideMiddleInPortrait) {
+                    addRailTrajectories(
+                        trajectories = trajectories,
+                        config = config,
+                        pocketType = pocketType,
+                        targetPocketPos = targetPocketPos,
+                        railPoints = diamonds["top"],
+                        halfRailPoints = halfDiamonds["top"],
+                        railEdge = RailEdge.TOP
+                    )
                 }
 
-                // Untuk lubang di atas (TOP_LEFT, TOP_RIGHT), pantulan via Bottom Rail
-                if (pocketType == Pocket.TOP_LEFT || pocketType == Pocket.TOP_RIGHT) {
-                    val bottomRail = diamonds["bottom"] ?: continue
-                    val virtualPocket = PointF2D(targetPocketPos.x, 2 * config.bottom - targetPocketPos.y)
-
-                    for (idx in 1..7) {
-                        if (idx == 4) continue
-                        val hitDiamond = bottomRail[idx]
-                        val startPos = lineIntersectionWithRail(
-                            p1 = virtualPocket,
-                            p2 = hitDiamond,
-                            railY = config.top,
-                            minX = config.left,
-                            maxX = config.right
-                        ) ?: continue
-
-                        trajectories.add(
-                            BankTrajectory(
-                                start = startPos,
-                                cushionHit1 = hitDiamond,
-                                targetPocket = targetPocketPos,
-                                label = "Titik $idx",
-                                pocketType = pocketType
-                            )
-                        )
-                    }
+                if (isTopPocket || isSideMiddleInPortrait) {
+                    addRailTrajectories(
+                        trajectories = trajectories,
+                        config = config,
+                        pocketType = pocketType,
+                        targetPocketPos = targetPocketPos,
+                        railPoints = diamonds["bottom"],
+                        halfRailPoints = halfDiamonds["bottom"],
+                        railEdge = RailEdge.BOTTOM
+                    )
                 }
-            } else {
-                // PORTRAIT (Vertikal - sesuai video TikTok):
-                // Pantulan menuju Lubang Kiri Bawah (BOTTOM_LEFT) via Right Rail (Rel Kanan)
-                if (pocketType == Pocket.BOTTOM_LEFT || pocketType == Pocket.TOP_LEFT) {
-                    val rightRail = diamonds["right"] ?: continue
-                    val virtualPocket = PointF2D(2 * config.right - targetPocketPos.x, targetPocketPos.y)
+            }
 
-                    for (idx in 1..7) {
-                        val hitDiamond = rightRail[idx]
-                        val startPos = lineIntersectionWithVerticalRail(
-                            p1 = virtualPocket,
-                            p2 = hitDiamond,
-                            railX = config.left,
-                            minY = config.top,
-                            maxY = config.bottom
-                        ) ?: continue
+            // 2. Pantulan Kiri <-> Kanan (via Left Rail & Right Rail)
+            if (includeLeftRight) {
+                val isLeftPocket = pocketType == Pocket.TOP_LEFT ||
+                        pocketType == Pocket.BOTTOM_LEFT ||
+                        (config.orientation == TableOrientation.PORTRAIT && pocketType == Pocket.MIDDLE_LEFT)
+                val isRightPocket = pocketType == Pocket.TOP_RIGHT ||
+                        pocketType == Pocket.BOTTOM_RIGHT ||
+                        (config.orientation == TableOrientation.PORTRAIT && pocketType == Pocket.MIDDLE_RIGHT)
+                val isTopBottomMiddleInLandscape = config.orientation == TableOrientation.LANDSCAPE &&
+                        (pocketType == Pocket.MIDDLE_LEFT || pocketType == Pocket.MIDDLE_RIGHT)
 
-                        trajectories.add(
-                            BankTrajectory(
-                                start = startPos,
-                                cushionHit1 = hitDiamond,
-                                targetPocket = targetPocketPos,
-                                label = "Titik $idx",
-                                pocketType = pocketType
-                            )
-                        )
-                    }
+                if (isLeftPocket || isTopBottomMiddleInLandscape) {
+                    addRailTrajectories(
+                        trajectories = trajectories,
+                        config = config,
+                        pocketType = pocketType,
+                        targetPocketPos = targetPocketPos,
+                        railPoints = diamonds["right"],
+                        halfRailPoints = halfDiamonds["right"],
+                        railEdge = RailEdge.RIGHT
+                    )
                 }
 
-                // Pantulan menuju Lubang Kanan Bawah / Kanan Atas via Left Rail (Rel Kiri)
-                if (pocketType == Pocket.BOTTOM_RIGHT || pocketType == Pocket.TOP_RIGHT) {
-                    val leftRail = diamonds["left"] ?: continue
-                    val virtualPocket = PointF2D(2 * config.left - targetPocketPos.x, targetPocketPos.y)
-
-                    for (idx in 1..7) {
-                        val hitDiamond = leftRail[idx]
-                        val startPos = lineIntersectionWithVerticalRail(
-                            p1 = virtualPocket,
-                            p2 = hitDiamond,
-                            railX = config.right,
-                            minY = config.top,
-                            maxY = config.bottom
-                        ) ?: continue
-
-                        trajectories.add(
-                            BankTrajectory(
-                                start = startPos,
-                                cushionHit1 = hitDiamond,
-                                targetPocket = targetPocketPos,
-                                label = "Titik $idx",
-                                pocketType = pocketType
-                            )
-                        )
-                    }
+                if (isRightPocket || isTopBottomMiddleInLandscape) {
+                    addRailTrajectories(
+                        trajectories = trajectories,
+                        config = config,
+                        pocketType = pocketType,
+                        targetPocketPos = targetPocketPos,
+                        railPoints = diamonds["left"],
+                        halfRailPoints = halfDiamonds["left"],
+                        railEdge = RailEdge.LEFT
+                    )
                 }
             }
         }
@@ -225,31 +200,136 @@ object DiamondSystemCalculator {
         return trajectories
     }
 
-    private fun lineIntersectionWithRail(
-        p1: PointF2D,
-        p2: PointF2D,
-        railY: Float,
-        minX: Float,
-        maxX: Float
-    ): PointF2D? {
-        val dy = p2.y - p1.y
-        if (Math.abs(dy) < 0.0001f) return null
-        val t = (railY - p1.y) / dy
-        val x = p1.x + t * (p2.x - p1.x)
-        return if (x in minX..maxX) PointF2D(x, railY) else null
+    private fun addRailTrajectories(
+        trajectories: MutableList<BankTrajectory>,
+        config: TableConfig,
+        pocketType: Pocket,
+        targetPocketPos: PointF2D,
+        railPoints: List<PointF2D>?,
+        halfRailPoints: List<PointF2D>?,
+        railEdge: RailEdge
+    ) {
+        if (railPoints == null) return
+
+        val virtualPocket = when (railEdge) {
+            RailEdge.TOP -> PointF2D(targetPocketPos.x, 2f * config.top - targetPocketPos.y)
+            RailEdge.BOTTOM -> PointF2D(targetPocketPos.x, 2f * config.bottom - targetPocketPos.y)
+            RailEdge.LEFT -> PointF2D(2f * config.left - targetPocketPos.x, targetPocketPos.y)
+            RailEdge.RIGHT -> PointF2D(2f * config.right - targetPocketPos.x, targetPocketPos.y)
+        }
+
+        val isLongRail = railPoints.size > 5
+
+        // Titik diamond utama (T1..T3 / T1..T7)
+        for (idx in 1 until railPoints.size - 1) {
+            if (isLongRail && idx == 4) continue // Titik 4 adalah lubang tengah
+            val hitDiamond = railPoints[idx]
+            val startPos = rayIntersectionWithTableBounds(
+                origin = hitDiamond,
+                virtualPocket = virtualPocket,
+                config = config,
+                excludeEdge = railEdge
+            ) ?: continue
+
+            trajectories.add(
+                BankTrajectory(
+                    start = startPos,
+                    cushionHit1 = hitDiamond,
+                    targetPocket = targetPocketPos,
+                    label = "T$idx",
+                    pocketType = pocketType,
+                    isHalfDiamond = false
+                )
+            )
+        }
+
+        // Titik tengah (half-diamond: 0.5, 1.5, 2.5, ...)
+        if (halfRailPoints != null) {
+            for (idx in halfRailPoints.indices) {
+                val hitHalf = halfRailPoints[idx]
+                val startPos = rayIntersectionWithTableBounds(
+                    origin = hitHalf,
+                    virtualPocket = virtualPocket,
+                    config = config,
+                    excludeEdge = railEdge
+                ) ?: continue
+
+                trajectories.add(
+                    BankTrajectory(
+                        start = startPos,
+                        cushionHit1 = hitHalf,
+                        targetPocket = targetPocketPos,
+                        label = "T${idx}.5",
+                        pocketType = pocketType,
+                        isHalfDiamond = true
+                    )
+                )
+            }
+        }
     }
 
-    private fun lineIntersectionWithVerticalRail(
-        p1: PointF2D,
-        p2: PointF2D,
-        railX: Float,
-        minY: Float,
-        maxY: Float
+    /**
+     * Mencari perpotongan sinar datang (dari origin ke dalam meja, menjauhi virtualPocket)
+     * dengan batas bantalan meja lainnya (top, bottom, left, right).
+     */
+    private fun rayIntersectionWithTableBounds(
+        origin: PointF2D,
+        virtualPocket: PointF2D,
+        config: TableConfig,
+        excludeEdge: RailEdge
     ): PointF2D? {
-        val dx = p2.x - p1.x
-        if (Math.abs(dx) < 0.0001f) return null
-        val t = (railX - p1.x) / dx
-        val y = p1.y + t * (p2.y - p1.y)
-        return if (y in minY..maxY) PointF2D(railX, y) else null
+        val dx = origin.x - virtualPocket.x
+        val dy = origin.y - virtualPocket.y
+        val eps = 0.0001f
+        val boundsTol = 0.5f
+
+        var bestT = Float.MAX_VALUE
+        var bestPoint: PointF2D? = null
+
+        if (excludeEdge != RailEdge.LEFT && abs(dx) > eps) {
+            val t = (config.left - origin.x) / dx
+            if (t > 0.001f && t < bestT) {
+                val y = origin.y + t * dy
+                if (y in (config.top - boundsTol)..(config.bottom + boundsTol)) {
+                    bestT = t
+                    bestPoint = PointF2D(config.left, y.coerceIn(config.top, config.bottom))
+                }
+            }
+        }
+
+        if (excludeEdge != RailEdge.RIGHT && abs(dx) > eps) {
+            val t = (config.right - origin.x) / dx
+            if (t > 0.001f && t < bestT) {
+                val y = origin.y + t * dy
+                if (y in (config.top - boundsTol)..(config.bottom + boundsTol)) {
+                    bestT = t
+                    bestPoint = PointF2D(config.right, y.coerceIn(config.top, config.bottom))
+                }
+            }
+        }
+
+        if (excludeEdge != RailEdge.TOP && abs(dy) > eps) {
+            val t = (config.top - origin.y) / dy
+            if (t > 0.001f && t < bestT) {
+                val x = origin.x + t * dx
+                if (x in (config.left - boundsTol)..(config.right + boundsTol)) {
+                    bestT = t
+                    bestPoint = PointF2D(x.coerceIn(config.left, config.right), config.top)
+                }
+            }
+        }
+
+        if (excludeEdge != RailEdge.BOTTOM && abs(dy) > eps) {
+            val t = (config.bottom - origin.y) / dy
+            if (t > 0.001f && t < bestT) {
+                val x = origin.x + t * dx
+                if (x in (config.left - boundsTol)..(config.right + boundsTol)) {
+                    bestT = t
+                    bestPoint = PointF2D(x.coerceIn(config.left, config.right), config.bottom)
+                }
+            }
+        }
+
+        return bestPoint
     }
 }

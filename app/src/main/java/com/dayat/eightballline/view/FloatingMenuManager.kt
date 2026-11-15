@@ -9,6 +9,7 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import com.dayat.eightballline.R
+import com.dayat.eightballline.model.BankDirection
 import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.util.PreferencesManager
 import kotlin.math.abs
@@ -30,8 +31,12 @@ class FloatingMenuManager(
     private val layoutExpandedPanel: View = menuView.findViewById(R.id.layoutExpandedPanel)
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
+    private val switchHalfDiamonds: SwitchCompat = menuView.findViewById(R.id.switchHalfDiamonds)
     private val btnToggleCalibration: Button = menuView.findViewById(R.id.btnToggleCalibration)
     private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
+    private val btnPrevDirection: TextView = menuView.findViewById(R.id.btnPrevDirection)
+    private val tvSelectedDirection: TextView = menuView.findViewById(R.id.tvSelectedDirection)
+    private val btnNextDirection: TextView = menuView.findViewById(R.id.btnNextDirection)
     private val btnPrevPocket: TextView = menuView.findViewById(R.id.btnPrevPocket)
     private val tvSelectedPocket: TextView = menuView.findViewById(R.id.tvSelectedPocket)
     private val btnNextPocket: TextView = menuView.findViewById(R.id.btnNextPocket)
@@ -41,6 +46,9 @@ class FloatingMenuManager(
 
     private val pockets = Pocket.values()
     private var currentPocketIndex = pockets.indexOf(overlayView.config.activePocket).coerceAtLeast(0)
+
+    private val directions = BankDirection.values()
+    private var currentDirectionIndex = directions.indexOf(overlayView.config.bankDirection).coerceAtLeast(0)
 
     private var initialX = 0
     private var initialY = 0
@@ -69,6 +77,7 @@ class FloatingMenuManager(
         }
 
         setupListeners()
+        setupDirectionSelector()
         setupPocketSelector()
         windowManager.addView(menuView, layoutParams)
     }
@@ -114,6 +123,14 @@ class FloatingMenuManager(
         switchLines.isChecked = overlayView.config.showBankShotLines
         switchLines.setOnCheckedChangeListener { _, isChecked ->
             overlayView.config.showBankShotLines = isChecked
+            overlayView.invalidate()
+            prefs.saveConfig(overlayView.config)
+        }
+
+        // Toggle Garis Titik Tengah (Half-Diamonds)
+        switchHalfDiamonds.isChecked = overlayView.config.showHalfDiamonds
+        switchHalfDiamonds.setOnCheckedChangeListener { _, isChecked ->
+            overlayView.config.showHalfDiamonds = isChecked
             overlayView.invalidate()
             prefs.saveConfig(overlayView.config)
         }
@@ -169,6 +186,33 @@ class FloatingMenuManager(
         btnCloseOverlay.setOnClickListener {
             onStopServiceRequested()
         }
+    }
+
+    private fun setupDirectionSelector() {
+        tvSelectedDirection.text = directions[currentDirectionIndex].displayName
+
+        btnPrevDirection.setOnClickListener {
+            currentDirectionIndex = (currentDirectionIndex - 1 + directions.size) % directions.size
+            applyDirectionSelection()
+        }
+
+        btnNextDirection.setOnClickListener {
+            currentDirectionIndex = (currentDirectionIndex + 1) % directions.size
+            applyDirectionSelection()
+        }
+
+        tvSelectedDirection.setOnClickListener {
+            currentDirectionIndex = (currentDirectionIndex + 1) % directions.size
+            applyDirectionSelection()
+        }
+    }
+
+    private fun applyDirectionSelection() {
+        val selectedDirection = directions[currentDirectionIndex]
+        tvSelectedDirection.text = selectedDirection.displayName
+        overlayView.config.bankDirection = selectedDirection
+        overlayView.invalidate()
+        prefs.saveConfig(overlayView.config)
     }
 
     private fun setupPocketSelector() {

@@ -2,6 +2,7 @@ package com.dayat.eightballline.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.dayat.eightballline.model.BankDirection
 import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.model.TableOrientation
@@ -19,6 +20,7 @@ class PreferencesManager(context: Context) {
             putFloat("table_bottom", config.bottom)
             putString("table_orientation", config.orientation.name)
             putInt("active_pocket", config.activePocket.id)
+            putInt("bank_direction", config.bankDirection.id)
             putInt("line_color", config.lineColor)
             putFloat("line_width", config.lineWidth)
             putInt("line_opacity", config.opacity)
@@ -59,6 +61,9 @@ class PreferencesManager(context: Context) {
         val pocketId = prefs.getInt("active_pocket", Pocket.ALL.id)
         val activePocket = Pocket.values().firstOrNull { it.id == pocketId } ?: Pocket.ALL
 
+        val directionId = prefs.getInt("bank_direction", BankDirection.ALL.id)
+        val bankDirection = BankDirection.values().firstOrNull { it.id == directionId } ?: BankDirection.ALL
+
         val lineColor = prefs.getInt("line_color", 0xFF00E5FF.toInt())
         val lineWidth = prefs.getFloat("line_width", 3f)
         val opacity = prefs.getInt("line_opacity", 210)
@@ -74,6 +79,7 @@ class PreferencesManager(context: Context) {
             bottom = bottom,
             orientation = orientation,
             activePocket = activePocket,
+            bankDirection = bankDirection,
             lineColor = lineColor,
             lineWidth = lineWidth,
             opacity = opacity,

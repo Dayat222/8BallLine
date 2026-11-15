@@ -21,168 +21,247 @@
     </LinearLayout>
 
     <!-- Expanded Floating Control Panel -->
-    <LinearLayout
+    <ScrollView
         android:id="@+id/layoutExpandedPanel"
         android:layout_width="290dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_floating_card"
-        android:orientation="vertical"
-        android:padding="16dp"
+        android:scrollbars="none"
         android:visibility="gone">
 
-        <!-- Header -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="8BallLine Controls"
-                android:textColor="@color/neon_cyan"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <ImageView
-                android:id="@+id/btnMinimize"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_alignParentEnd="true"
-                android:src="@android:drawable/ic_menu_close_clear_cancel"
-                app:tint="@color/text_secondary" />
-        </RelativeLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginVertical="10dp"
-            android:background="@color/surface_card_border" />
-
-        <!-- Toggle Garis Pantul -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:padding="14dp">
 
-            <TextView
-                android:layout_width="0dp"
+            <!-- Header -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="8BallLine Controls"
+                    android:textColor="@color/neon_cyan"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <ImageView
+                    android:id="@+id/btnMinimize"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentEnd="true"
+                    android:src="@android:drawable/ic_menu_close_clear_cancel"
+                    app:tint="@color/text_secondary" />
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="8dp"
+                android:background="@color/surface_card_border" />
+
+            <!-- Toggle Garis Pantul -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Garis Pantul"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switchLines"
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Garis Pantul"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchLines"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true" />
+            </LinearLayout>
+
+            <!-- Toggle Titik Tengah (Half Diamonds) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Garis Titik Tengah (0.5)"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchHalfDiamonds"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true" />
+            </LinearLayout>
+
+            <!-- Mode Kalibrasi vs Lock -->
+            <Button
+                android:id="@+id/btnToggleCalibration"
+                android:layout_width="match_parent"
+                android:layout_height="38dp"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@color/accent_red"
+                android:text="Masuk Mode Kalibrasi"
+                android:textAllCaps="false"
+                android:textColor="@color/text_primary"
+                android:textSize="12sp" />
+
+            <!-- Reset Posisi Meja ke Tengah Layar -->
+            <Button
+                android:id="@+id/btnResetTableInOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="34dp"
+                android:layout_marginTop="4dp"
+                android:backgroundTint="@color/surface_card"
+                android:text="Reset Posisi Meja ke Layar"
+                android:textAllCaps="false"
+                android:textColor="@color/neon_cyan"
+                android:textSize="11sp" />
+
+            <!-- Arah Pantulan Selector -->
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="true" />
+                android:layout_marginTop="10dp"
+                android:text="Arah Pantul:"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/bg_floating_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="6dp">
+
+                <TextView
+                    android:id="@+id/btnPrevDirection"
+                    android:layout_width="34dp"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:text="◀"
+                    android:textColor="@color/neon_cyan"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSelectedDirection"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Semua Arah"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnNextDirection"
+                    android:layout_width="34dp"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:text="▶"
+                    android:textColor="@color/neon_cyan"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Target Pocket Selector -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Target Lubang (Pocket):"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="3dp"
+                android:background="@drawable/bg_floating_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="6dp">
+
+                <TextView
+                    android:id="@+id/btnPrevPocket"
+                    android:layout_width="34dp"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:text="◀"
+                    android:textColor="@color/neon_cyan"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvSelectedPocket"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Semua Lubang"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnNextPocket"
+                    android:layout_width="34dp"
+                    android:layout_height="30dp"
+                    android:gravity="center"
+                    android:text="▶"
+                    android:textColor="@color/neon_cyan"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Opacity Slider -->
+            <TextView
+                android:id="@+id/tvOpacityLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="Opasitas Garis (80%)"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp" />
+
+            <SeekBar
+                android:id="@+id/seekBarOpacity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:max="255"
+                android:progress="210" />
+
+            <!-- Close / Stop Service -->
+            <Button
+                android:id="@+id/btnCloseOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:layout_marginTop="10dp"
+                android:backgroundTint="@color/surface_card_border"
+                android:text="Tutup Overlay"
+                android:textAllCaps="false"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
         </LinearLayout>
-
-        <!-- Mode Kalibrasi vs Lock -->
-        <Button
-            android:id="@+id/btnToggleCalibration"
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginTop="8dp"
-            android:backgroundTint="@color/accent_red"
-            android:text="Masuk Mode Kalibrasi"
-            android:textAllCaps="false"
-            android:textColor="@color/text_primary"
-            android:textSize="12sp" />
-
-        <!-- Reset Posisi Meja ke Tengah Layar -->
-        <Button
-            android:id="@+id/btnResetTableInOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:layout_marginTop="6dp"
-            android:backgroundTint="@color/surface_card"
-            android:text="Reset Posisi Meja ke Layar"
-            android:textAllCaps="false"
-            android:textColor="@color/neon_cyan"
-            android:textSize="11sp" />
-
-        <!-- Target Pocket Selector (inline, aman untuk WindowManager overlay tanpa PopupWindow) -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Target Lubang (Pocket):"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/bg_floating_card"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="6dp">
-
-            <TextView
-                android:id="@+id/btnPrevPocket"
-                android:layout_width="36dp"
-                android:layout_height="32dp"
-                android:gravity="center"
-                android:text="◀"
-                android:textColor="@color/neon_cyan"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvSelectedPocket"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:text="Semua Lubang"
-                android:textColor="@color/text_primary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/btnNextPocket"
-                android:layout_width="36dp"
-                android:layout_height="32dp"
-                android:gravity="center"
-                android:text="▶"
-                android:textColor="@color/neon_cyan"
-                android:textSize="14sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-        <!-- Opacity Slider -->
-        <TextView
-            android:id="@+id/tvOpacityLabel"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Opasitas Garis (80%)"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-
-        <SeekBar
-            android:id="@+id/seekBarOpacity"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:max="255"
-            android:progress="210" />
-
-        <!-- Close / Stop Service -->
-        <Button
-            android:id="@+id/btnCloseOverlay"
-            android:layout_width="match_parent"
-            android:layout_height="38dp"
-            android:layout_marginTop="12dp"
-            android:backgroundTint="@color/surface_card_border"
-            android:text="Tutup Overlay"
-            android:textAllCaps="false"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
-    </LinearLayout>
+    </ScrollView>
 
 </FrameLayout>

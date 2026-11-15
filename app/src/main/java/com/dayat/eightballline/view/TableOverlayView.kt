@@ -32,6 +32,11 @@ class TableOverlayView(context: Context) : View(context) {
         strokeCap = Paint.Cap.ROUND
     }
 
+    private val halfLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+
     private val cushionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f
@@ -42,6 +47,11 @@ class TableOverlayView(context: Context) : View(context) {
     private val diamondPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         color = 0xFFFFFFFF.toInt()
+    }
+
+    private val halfDiamondPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0xCC00E5FF.toInt()
     }
 
     private val pocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -140,10 +150,15 @@ class TableOverlayView(context: Context) : View(context) {
         linePaint.color = config.lineColor
         linePaint.alpha = config.opacity
         linePaint.strokeWidth = config.lineWidth
+
+        halfLinePaint.color = config.lineColor
+        halfLinePaint.alpha = (config.opacity * 0.65f).toInt().coerceIn(20, 255)
+        halfLinePaint.strokeWidth = (config.lineWidth * 0.65f).coerceAtLeast(1.5f)
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        updatePaints()
 
         if (config.width <= 20f || config.height <= 20f) return
 
@@ -160,17 +175,18 @@ class TableOverlayView(context: Context) : View(context) {
         if (config.showBankShotLines) {
             val trajectories = DiamondSystemCalculator.calculateTrajectories(config)
             for (traj in trajectories) {
+                val activePaint = if (traj.isHalfDiamond) halfLinePaint else linePaint
                 // Sinar datang (incoming ray)
                 canvas.drawLine(
                     traj.start.x, traj.start.y,
                     traj.cushionHit1.x, traj.cushionHit1.y,
-                    linePaint
+                    activePaint
                 )
                 // Sinar pantul (reflected ray)
                 canvas.drawLine(
                     traj.cushionHit1.x, traj.cushionHit1.y,
                     traj.targetPocket.x, traj.targetPocket.y,
-                    linePaint
+                    activePaint
                 )
             }
         }
@@ -185,19 +201,29 @@ class TableOverlayView(context: Context) : View(context) {
                     // Lingkaran diamond
                     canvas.drawCircle(pt.x, pt.y, 6f, diamondPaint)
 
-                    // Label nomor titik (Titik 1, 2, 3, 4, 5, 6)
-                    val label = if (idx == 4 && points.size > 5) "T4 (Tengah)" else "T$idx"
+                    // Label nomor titik (Titik 1, 2, 3, 4, 5, 6, 7)
+                    val label = if (idx == 4 && points.size > 5) "T4" else "T$idx"
                     val offsetY = when (railName) {
                         "top" -> -14f
-                        "bottom" -> 30f
-                        else -> 10f
+                        "bottom" -> 28f
+                        else -> 8f
                     }
                     val offsetX = when (railName) {
-                        "left" -> -20f
-                        "right" -> 20f
+                        "left" -> -22f
+                        "right" -> 22f
                         else -> 0f
                     }
                     canvas.drawText(label, pt.x + offsetX, pt.y + offsetY, textPaint)
+                }
+            }
+
+            // Gambar titik tengah (half-diamonds) di antara titik-titik utama
+            if (config.showHalfDiamonds) {
+                val halfDiamonds = DiamondSystemCalculator.getHalfDiamondPoints(config)
+                for ((_, points) in halfDiamonds) {
+                    for (pt in points) {
+                        canvas.drawCircle(pt.x, pt.y, 3.8f, halfDiamondPaint)
+                    }
                 }
             }
         }
