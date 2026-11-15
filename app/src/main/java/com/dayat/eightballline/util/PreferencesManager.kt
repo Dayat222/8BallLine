@@ -12,12 +12,20 @@ class PreferencesManager(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("eight_ball_line_prefs", Context.MODE_PRIVATE)
 
+    fun hasSavedCalibration(): Boolean {
+        return prefs.contains("table_left") &&
+                prefs.contains("table_top") &&
+                prefs.contains("table_right") &&
+                prefs.contains("table_bottom")
+    }
+
     fun saveConfig(config: TableConfig) {
         prefs.edit().apply {
             putFloat("table_left", config.left)
             putFloat("table_top", config.top)
             putFloat("table_right", config.right)
             putFloat("table_bottom", config.bottom)
+            putBoolean("has_saved_calibration", true)
             putString("table_orientation", config.orientation.name)
             putInt("active_pocket", config.activePocket.id)
             putInt("bank_direction", config.bankDirection.id)
@@ -31,6 +39,14 @@ class PreferencesManager(context: Context) {
         }
     }
 
+    fun updateLineColor(color: Int) {
+        prefs.edit().putInt("line_color", color).apply()
+    }
+
+    fun updateOrientation(orientation: TableOrientation) {
+        prefs.edit().putString("table_orientation", orientation.name).apply()
+    }
+
     fun loadConfig(screenWidth: Int, screenHeight: Int): TableConfig {
         val orientationStr = prefs.getString("table_orientation", TableOrientation.LANDSCAPE.name)
         val orientation = try {
@@ -42,20 +58,38 @@ class PreferencesManager(context: Context) {
         val (effW, effH) = effectiveDimensions(screenWidth, screenHeight, orientation)
         val (defLeft, defTop, defRight, defBottom) = defaultBounds(effW, effH, orientation)
 
-        var left = prefs.getFloat("table_left", defLeft)
-        var top = prefs.getFloat("table_top", defTop)
-        var right = prefs.getFloat("table_right", defRight)
-        var bottom = prefs.getFloat("table_bottom", defBottom)
+        val left: Float
+        val top: Float
+        val right: Float
+        val bottom: Float
 
-        // Jika koordinat tersimpan keluar dari batas layar orientasi aktif, sesuaikan agar 4 sudut selalu terlihat
-        val margin = 24f
-        if (left < margin || top < margin || right > effW - margin || bottom > effH - margin ||
-            right - left < 120f || bottom - top < 80f
-        ) {
-            left = left.coerceIn(margin, (effW - margin - 120f).coerceAtLeast(margin))
-            top = top.coerceIn(margin, (effH - margin - 80f).coerceAtLeast(margin))
-            right = right.coerceIn((left + 120f).coerceAtMost(effW - margin), effW - margin)
-            bottom = bottom.coerceIn((top + 80f).coerceAtMost(effH - margin), effH - margin)
+        if (hasSavedCalibration()) {
+            // Pertahankan hasil kalibrasi user apa adanya tanpa diubah/di-clamp otomatis
+            val savedLeft = prefs.getFloat("table_left", defLeft)
+            val savedTop = prefs.getFloat("table_top", defTop)
+            val savedRight = prefs.getFloat("table_right", defRight)
+            val savedBottom = prefs.getFloat("table_bottom", defBottom)
+
+            val isValid = !savedLeft.isNaN() && !savedTop.isNaN() &&
+                    !savedRight.isNaN() && !savedBottom.isNaN() &&
+                    (savedRight - savedLeft) >= 40f && (savedBottom - savedTop) >= 40f
+
+            if (isValid) {
+                left = savedLeft
+                top = savedTop
+                right = savedRight
+                bottom = savedBottom
+            } else {
+                left = defLeft
+                top = defTop
+                right = defRight
+                bottom = defBottom
+            }
+        } else {
+            left = defLeft
+            top = defTop
+            right = defRight
+            bottom = defBottom
         }
 
         val pocketId = prefs.getInt("active_pocket", Pocket.ALL.id)

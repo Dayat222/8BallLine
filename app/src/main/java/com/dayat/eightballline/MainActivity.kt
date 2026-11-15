@@ -93,18 +93,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.rgOrientation.setOnCheckedChangeListener { _, checkedId ->
-            val metrics = DisplayMetrics()
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getRealMetrics(metrics)
-            val config = prefs.loadConfig(metrics.widthPixels, metrics.heightPixels)
-
-            config.orientation = if (checkedId == R.id.rbLandscape) {
+            val orientation = if (checkedId == R.id.rbLandscape) {
                 TableOrientation.LANDSCAPE
             } else {
                 TableOrientation.PORTRAIT
             }
-            prefs.saveConfig(config)
-            Toast.makeText(this, "Orientasi diubah: ${config.orientation.displayName}", Toast.LENGTH_SHORT).show()
+            prefs.updateOrientation(orientation)
+            Toast.makeText(this, "Orientasi diubah: ${orientation.displayName}", Toast.LENGTH_SHORT).show()
         }
 
         // Color buttons
@@ -135,12 +130,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun selectColor(color: Int, name: String) {
-        val metrics = DisplayMetrics()
-        @Suppress("DEPRECATION")
-        windowManager.defaultDisplay.getRealMetrics(metrics)
-        val config = prefs.loadConfig(metrics.widthPixels, metrics.heightPixels)
-        config.lineColor = color
-        prefs.saveConfig(config)
+        prefs.updateLineColor(color)
         Toast.makeText(this, "Warna garis diubah: $name", Toast.LENGTH_SHORT).show()
     }
 

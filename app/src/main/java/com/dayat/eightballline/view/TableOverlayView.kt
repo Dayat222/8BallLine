@@ -112,38 +112,8 @@ class TableOverlayView(context: Context) : View(context) {
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        if (w > 0 && h > 0) {
-            clampConfigToView(w.toFloat(), h.toFloat())
-        }
-    }
-
-    fun clampConfigToView(viewW: Float = width.toFloat(), viewH: Float = height.toFloat()) {
-        if (viewW <= 160f || viewH <= 160f) return
-        val margin = 48f
-        val minTableW = 120f
-        val minTableH = 80f
-
-        var l = config.left.coerceIn(margin, (viewW - margin - minTableW).coerceAtLeast(margin))
-        var t = config.top.coerceIn(margin, (viewH - margin - minTableH).coerceAtLeast(margin))
-        var r = config.right.coerceIn((l + minTableW).coerceAtMost(viewW - margin), viewW - margin)
-        var b = config.bottom.coerceIn((t + minTableH).coerceAtMost(viewH - margin), viewH - margin)
-
-        if (r - l < minTableW) {
-            l = viewW * 0.16f
-            r = viewW * 0.84f
-        }
-        if (b - t < minTableH) {
-            t = viewH * 0.14f
-            b = viewH * 0.88f
-        }
-
-        if (l != config.left || t != config.top || r != config.right || b != config.bottom) {
-            config.left = l
-            config.top = t
-            config.right = r
-            config.bottom = b
-            invalidate()
-        }
+        // Jangan mengubah atau melakukan clamp koordinat kalibrasi tersimpan saat orientasi berubah
+        invalidate()
     }
 
     private fun updatePaints() {
@@ -348,6 +318,9 @@ class TableOverlayView(context: Context) : View(context) {
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                if (activeHandle != -1) {
+                    onCalibrationChanged?.invoke(config)
+                }
                 activeHandle = -1
                 return true
             }

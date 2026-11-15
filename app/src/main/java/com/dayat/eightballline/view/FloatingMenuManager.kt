@@ -138,9 +138,6 @@ class FloatingMenuManager(
         // Mode Kalibrasi vs Lock Meja
         btnToggleCalibration.setOnClickListener {
             val newMode = !overlayView.isCalibrationMode
-            if (newMode) {
-                overlayView.clampConfigToView()
-            }
             overlayView.isCalibrationMode = newMode
             onCalibrationModeChanged(newMode)
 
