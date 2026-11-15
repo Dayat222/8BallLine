@@ -7,16 +7,16 @@
     <string name="btn_start_overlay">Mulai Overlay Garis Pantul</string>
     <string name="btn_stop_overlay">Hentikan Overlay</string>
     <string name="grant_permission">Beri Izin Tampilkan di Atas Aplikasi Lain</string>
-    <string name="permission_required_desc">Aplikasi membutuhkan izin 'Display over other apps' agar garis pantul dapat tampil mengambang di atas game 8 Ball Pool.</string>
+    <string name="permission_required_desc">Aplikasi membutuhkan izin \'Display over other apps\' agar garis pantul dapat tampil mengambang di atas game 8 Ball Pool.</string>
     <string name="table_settings_title">Pengaturan Meja &amp; Tampilan</string>
     <string name="orientation_label">Orientasi Meja</string>
     <string name="line_color_label">Warna Garis Pantul</string>
     <string name="line_opacity_label">Transparansi Garis</string>
     <string name="reset_calibration">Reset Kalibrasi Ukuran Meja</string>
     <string name="how_to_use_title">Cara Menggunakan</string>
-    <string name="step_1">1. Buka izin overlay dan tekan tombol 'Mulai Overlay'.</string>
+    <string name="step_1">1. Buka izin overlay dan tekan tombol \'Mulai Overlay\'.</string>
     <string name="step_2">2. Buka game 8 Ball Pool di ponsel Anda.</string>
-    <string name="step_3">3. Tekan ikon melayang 8BallLine, pilih 'Mode Kalibrasi' dan sesuaikan 4 titik sudut merah agar tepat di tepi bantalan (cushion) meja.</string>
-    <string name="step_4">4. Setelah pas, tekan 'Kunci Meja' untuk bermain tanpa hambatan sentuhan.</string>
+    <string name="step_3">3. Tekan ikon melayang 8BallLine, pilih \'Mode Kalibrasi\' dan sesuaikan 4 titik sudut merah agar tepat di tepi bantalan (cushion) meja.</string>
+    <string name="step_4">4. Setelah pas, tekan \'Kunci Meja\' untuk bermain tanpa hambatan sentuhan.</string>
     <string name="step_5">5. Sejajarkan stik dengan garis Titik 1 s/d 6 untuk tembakan pantulan (bank shot) presisi.</string>
 </resources>

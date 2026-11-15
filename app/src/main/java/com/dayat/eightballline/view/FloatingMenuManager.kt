@@ -118,10 +118,10 @@ class FloatingMenuManager(
 
             if (newMode) {
                 btnToggleCalibration.text = "Kunci Meja (Mode Main)"
-                btnToggleCalibration.setBackgroundColor(context.getColor(R.color.accent_green))
+                btnToggleCalibration.setBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.accent_green))
             } else {
                 btnToggleCalibration.text = "Masuk Mode Kalibrasi"
-                btnToggleCalibration.setBackgroundColor(context.getColor(R.color.accent_red))
+                btnToggleCalibration.setBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.accent_red))
                 prefs.saveConfig(overlayView.config)
             }
         }

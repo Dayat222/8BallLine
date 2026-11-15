@@ -159,14 +159,14 @@ class MainActivity : AppCompatActivity() {
         val running = isServiceRunning(OverlayService::class.java)
         if (running) {
             binding.tvStatusText.text = getString(R.string.status_running)
-            binding.tvStatusText.setTextColor(getColor(R.color.accent_green))
+            binding.tvStatusText.setTextColor(ContextCompat.getColor(this, R.color.accent_green))
             binding.btnToggleService.text = getString(R.string.btn_stop_overlay)
-            binding.btnToggleService.setBackgroundColor(getColor(R.color.accent_red))
+            binding.btnToggleService.setBackgroundColor(ContextCompat.getColor(this, R.color.accent_red))
         } else {
             binding.tvStatusText.text = getString(R.string.status_stopped)
-            binding.tvStatusText.setTextColor(getColor(R.color.text_secondary))
+            binding.tvStatusText.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
             binding.btnToggleService.text = getString(R.string.btn_start_overlay)
-            binding.btnToggleService.setBackgroundColor(getColor(R.color.neon_cyan))
+            binding.btnToggleService.setBackgroundColor(ContextCompat.getColor(this, R.color.neon_cyan))
         }
     }
 
