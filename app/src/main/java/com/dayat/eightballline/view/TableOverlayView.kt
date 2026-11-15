@@ -92,6 +92,23 @@ class TableOverlayView(context: Context) : View(context) {
         linePaint.strokeWidth = config.lineWidth
     }
 
+    // Dragging state for calibration
+    private var activeHandle = -1 // 0-3: Corners (TL, TR, BR, BL), 4: Center pan, 5: Top, 6: Right, 7: Bottom, 8: Left
+    private var lastTouchX = 0f
+    private var lastTouchY = 0f
+    private val handleRadius = 40f
+    private val centerHandleRadius = 35f
+
+    init {
+        updatePaints()
+    }
+
+    private fun updatePaints() {
+        linePaint.color = config.lineColor
+        linePaint.alpha = config.opacity
+        linePaint.strokeWidth = config.lineWidth
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
@@ -154,6 +171,10 @@ class TableOverlayView(context: Context) : View(context) {
 
         // 5. Gambar Handle Kalibrasi (jika dalam Mode Kalibrasi)
         if (isCalibrationMode) {
+            val midX = (config.left + config.right) / 2f
+            val midY = (config.top + config.bottom) / 2f
+
+            // 4 Sudut (Merah)
             val corners = arrayOf(
                 PointF2D(config.left, config.top),
                 PointF2D(config.right, config.top),
@@ -166,23 +187,35 @@ class TableOverlayView(context: Context) : View(context) {
                 canvas.drawCircle(pt.x, pt.y, handleRadius, handleBorderPaint)
             }
 
-            // Panduan di tengah layar
-            val midX = (config.left + config.right) / 2f
-            val midY = (config.top + config.bottom) / 2f
+            // Handle Geser Tengah (Cyan/Hijau)
+            val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.FILL
+                color = 0xFF00E5FF.toInt()
+            }
+            canvas.drawCircle(midX, midY, centerHandleRadius, centerPaint)
+            canvas.drawCircle(midX, midY, centerHandleRadius, handleBorderPaint)
+            val centerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                textSize = 20f
+                color = 0xFF000000.toInt()
+                textAlign = Paint.Align.CENTER
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            canvas.drawText("GESER", midX, midY + 7f, centerTextPaint)
+
+            // Panduan di layar
             canvas.drawText(
-                "MODE KALIBRASI AKTIF",
-                midX, midY - 30f, guideTextPaint
+                "MODE KALIBRASI UKURAN MEJA AKTIF",
+                midX, midY - 60f, guideTextPaint
             )
             canvas.drawText(
-                "Geser 4 titik merah sudut meja agar pas dengan 8 Ball Pool",
-                midX, midY + 25f, textPaint
+                "Tarik 4 sudut merah untuk ukuran, atau tombol tengah untuk geser",
+                midX, midY + 65f, textPaint
             )
         }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         if (!isCalibrationMode) {
-            // Ketika mode game / bukan kalibrasi, jangan sentuh event ini (biarkan pass-through)
             return false
         }
 
@@ -191,6 +224,19 @@ class TableOverlayView(context: Context) : View(context) {
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                lastTouchX = x
+                lastTouchY = y
+
+                val midX = (config.left + config.right) / 2f
+                val midY = (config.top + config.bottom) / 2f
+
+                // Cek apakah klik tombol tengah (center pan)
+                if (hypot((x - midX).toDouble(), (y - midY).toDouble()) <= centerHandleRadius * 1.8f) {
+                    activeHandle = 4
+                    return true
+                }
+
+                // Cek 4 sudut meja
                 val corners = arrayOf(
                     PointF2D(config.left, config.top),
                     PointF2D(config.right, config.top),
@@ -198,20 +244,25 @@ class TableOverlayView(context: Context) : View(context) {
                     PointF2D(config.left, config.bottom)
                 )
 
-                activeCorner = -1
+                activeHandle = -1
                 for (i in corners.indices) {
                     val dist = hypot((x - corners[i].x).toDouble(), (y - corners[i].y).toDouble())
                     if (dist <= handleRadius * 1.8f) {
-                        activeCorner = i
+                        activeHandle = i
                         break
                     }
                 }
-                return activeCorner != -1
+                return activeHandle != -1
             }
 
             MotionEvent.ACTION_MOVE -> {
-                if (activeCorner != -1) {
-                    when (activeCorner) {
+                if (activeHandle != -1) {
+                    val dx = x - lastTouchX
+                    val dy = y - lastTouchY
+                    lastTouchX = x
+                    lastTouchY = y
+
+                    when (activeHandle) {
                         0 -> { // Top-Left
                             config.left = x.coerceAtMost(config.right - 80f)
                             config.top = y.coerceAtMost(config.bottom - 80f)
@@ -228,6 +279,12 @@ class TableOverlayView(context: Context) : View(context) {
                             config.left = x.coerceAtMost(config.right - 80f)
                             config.bottom = y.coerceAtLeast(config.top + 80f)
                         }
+                        4 -> { // Center Pan (Geser seluruh meja)
+                            config.left += dx
+                            config.right += dx
+                            config.top += dy
+                            config.bottom += dy
+                        }
                     }
                     invalidate()
                     onCalibrationChanged?.invoke(config)
@@ -236,7 +293,7 @@ class TableOverlayView(context: Context) : View(context) {
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                activeCorner = -1
+                activeHandle = -1
                 return true
             }
         }
