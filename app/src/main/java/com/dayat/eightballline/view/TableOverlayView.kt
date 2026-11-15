@@ -100,6 +100,42 @@ class TableOverlayView(context: Context) : View(context) {
         updatePaints()
     }
 
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        if (w > 0 && h > 0) {
+            clampConfigToView(w.toFloat(), h.toFloat())
+        }
+    }
+
+    fun clampConfigToView(viewW: Float = width.toFloat(), viewH: Float = height.toFloat()) {
+        if (viewW <= 160f || viewH <= 160f) return
+        val margin = 48f
+        val minTableW = 120f
+        val minTableH = 80f
+
+        var l = config.left.coerceIn(margin, (viewW - margin - minTableW).coerceAtLeast(margin))
+        var t = config.top.coerceIn(margin, (viewH - margin - minTableH).coerceAtLeast(margin))
+        var r = config.right.coerceIn((l + minTableW).coerceAtMost(viewW - margin), viewW - margin)
+        var b = config.bottom.coerceIn((t + minTableH).coerceAtMost(viewH - margin), viewH - margin)
+
+        if (r - l < minTableW) {
+            l = viewW * 0.16f
+            r = viewW * 0.84f
+        }
+        if (b - t < minTableH) {
+            t = viewH * 0.14f
+            b = viewH * 0.88f
+        }
+
+        if (l != config.left || t != config.top || r != config.right || b != config.bottom) {
+            config.left = l
+            config.top = t
+            config.right = r
+            config.bottom = b
+            invalidate()
+        }
+    }
+
     private fun updatePaints() {
         linePaint.color = config.lineColor
         linePaint.alpha = config.opacity
@@ -249,28 +285,36 @@ class TableOverlayView(context: Context) : View(context) {
                     lastTouchX = x
                     lastTouchY = y
 
+                    val margin = 24f
+                    val maxX = (width - margin).coerceAtLeast(margin + 100f)
+                    val maxY = (height - margin).coerceAtLeast(margin + 100f)
+                    val clampedX = x.coerceIn(margin, maxX)
+                    val clampedY = y.coerceIn(margin, maxY)
+
                     when (activeHandle) {
                         0 -> { // Top-Left
-                            config.left = x.coerceAtMost(config.right - 80f)
-                            config.top = y.coerceAtMost(config.bottom - 80f)
+                            config.left = clampedX.coerceAtMost(config.right - 80f)
+                            config.top = clampedY.coerceAtMost(config.bottom - 80f)
                         }
                         1 -> { // Top-Right
-                            config.right = x.coerceAtLeast(config.left + 80f)
-                            config.top = y.coerceAtMost(config.bottom - 80f)
+                            config.right = clampedX.coerceAtLeast(config.left + 80f)
+                            config.top = clampedY.coerceAtMost(config.bottom - 80f)
                         }
                         2 -> { // Bottom-Right
-                            config.right = x.coerceAtLeast(config.left + 80f)
-                            config.bottom = y.coerceAtLeast(config.top + 80f)
+                            config.right = clampedX.coerceAtLeast(config.left + 80f)
+                            config.bottom = clampedY.coerceAtLeast(config.top + 80f)
                         }
                         3 -> { // Bottom-Left
-                            config.left = x.coerceAtMost(config.right - 80f)
-                            config.bottom = y.coerceAtLeast(config.top + 80f)
+                            config.left = clampedX.coerceAtMost(config.right - 80f)
+                            config.bottom = clampedY.coerceAtLeast(config.top + 80f)
                         }
-                        4 -> { // Center Pan (Geser seluruh meja)
-                            config.left += dx
-                            config.right += dx
-                            config.top += dy
-                            config.bottom += dy
+                        4 -> { // Center Pan (Geser seluruh meja, tetap di dalam layar)
+                            val clampedDx = dx.coerceIn(margin - config.left, maxX - config.right)
+                            val clampedDy = dy.coerceIn(margin - config.top, maxY - config.bottom)
+                            config.left += clampedDx
+                            config.right += clampedDx
+                            config.top += clampedDy
+                            config.bottom += clampedDy
                         }
                     }
                     invalidate()

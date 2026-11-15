@@ -37,13 +37,24 @@ class PreferencesManager(context: Context) {
             TableOrientation.LANDSCAPE
         }
 
-        val defaultMarginX = screenWidth * 0.1f
-        val defaultMarginY = screenHeight * 0.15f
+        val (effW, effH) = effectiveDimensions(screenWidth, screenHeight, orientation)
+        val (defLeft, defTop, defRight, defBottom) = defaultBounds(effW, effH, orientation)
 
-        val left = prefs.getFloat("table_left", defaultMarginX)
-        val top = prefs.getFloat("table_top", defaultMarginY)
-        val right = prefs.getFloat("table_right", screenWidth - defaultMarginX)
-        val bottom = prefs.getFloat("table_bottom", screenHeight - defaultMarginY)
+        var left = prefs.getFloat("table_left", defLeft)
+        var top = prefs.getFloat("table_top", defTop)
+        var right = prefs.getFloat("table_right", defRight)
+        var bottom = prefs.getFloat("table_bottom", defBottom)
+
+        // Jika koordinat tersimpan keluar dari batas layar orientasi aktif, sesuaikan agar 4 sudut selalu terlihat
+        val margin = 24f
+        if (left < margin || top < margin || right > effW - margin || bottom > effH - margin ||
+            right - left < 120f || bottom - top < 80f
+        ) {
+            left = left.coerceIn(margin, (effW - margin - 120f).coerceAtLeast(margin))
+            top = top.coerceIn(margin, (effH - margin - 80f).coerceAtLeast(margin))
+            right = right.coerceIn((left + 120f).coerceAtMost(effW - margin), effW - margin)
+            bottom = bottom.coerceIn((top + 80f).coerceAtMost(effH - margin), effH - margin)
+        }
 
         val pocketId = prefs.getInt("active_pocket", Pocket.ALL.id)
         val activePocket = Pocket.values().firstOrNull { it.id == pocketId } ?: Pocket.ALL
@@ -73,17 +84,42 @@ class PreferencesManager(context: Context) {
     }
 
     fun resetCalibration(screenWidth: Int, screenHeight: Int, orientation: TableOrientation): TableConfig {
-        val marginX = screenWidth * 0.08f
-        val marginY = screenHeight * 0.12f
+        val (effW, effH) = effectiveDimensions(screenWidth, screenHeight, orientation)
+        val (defLeft, defTop, defRight, defBottom) = defaultBounds(effW, effH, orientation)
 
-        val config = TableConfig(
-            left = marginX,
-            top = marginY,
-            right = screenWidth - marginX,
-            bottom = screenHeight - marginY,
-            orientation = orientation
-        )
-        saveConfig(config)
-        return config
+        val current = loadConfig(screenWidth, screenHeight)
+        current.left = defLeft
+        current.top = defTop
+        current.right = defRight
+        current.bottom = defBottom
+        current.orientation = orientation
+        saveConfig(current)
+        return current
+    }
+
+    private fun effectiveDimensions(
+        screenWidth: Int,
+        screenHeight: Int,
+        orientation: TableOrientation
+    ): Pair<Float, Float> {
+        val w = screenWidth.toFloat().coerceAtLeast(200f)
+        val h = screenHeight.toFloat().coerceAtLeast(200f)
+        return if (orientation == TableOrientation.LANDSCAPE) {
+            maxOf(w, h) to minOf(w, h)
+        } else {
+            minOf(w, h) to maxOf(w, h)
+        }
+    }
+
+    private fun defaultBounds(
+        effW: Float,
+        effH: Float,
+        orientation: TableOrientation
+    ): FloatArray {
+        return if (orientation == TableOrientation.LANDSCAPE) {
+            floatArrayOf(effW * 0.16f, effH * 0.14f, effW * 0.84f, effH * 0.88f)
+        } else {
+            floatArrayOf(effW * 0.10f, effH * 0.18f, effW * 0.90f, effH * 0.82f)
+        }
     }
 }

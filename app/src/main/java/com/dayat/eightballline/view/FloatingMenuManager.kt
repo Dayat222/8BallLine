@@ -31,6 +31,7 @@ class FloatingMenuManager(
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
     private val btnToggleCalibration: Button = menuView.findViewById(R.id.btnToggleCalibration)
+    private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
     private val btnPrevPocket: TextView = menuView.findViewById(R.id.btnPrevPocket)
     private val tvSelectedPocket: TextView = menuView.findViewById(R.id.tvSelectedPocket)
     private val btnNextPocket: TextView = menuView.findViewById(R.id.btnNextPocket)
@@ -120,6 +121,9 @@ class FloatingMenuManager(
         // Mode Kalibrasi vs Lock Meja
         btnToggleCalibration.setOnClickListener {
             val newMode = !overlayView.isCalibrationMode
+            if (newMode) {
+                overlayView.clampConfigToView()
+            }
             overlayView.isCalibrationMode = newMode
             onCalibrationModeChanged(newMode)
 
@@ -131,6 +135,18 @@ class FloatingMenuManager(
                 btnToggleCalibration.setBackgroundColor(ContextCompat.getColor(themedContext, R.color.accent_red))
                 prefs.saveConfig(overlayView.config)
             }
+        }
+
+        // Reset posisi meja agar pas di layar aktif (mis. saat sudah di dalam game landscape)
+        btnResetTableInOverlay.setOnClickListener {
+            val w = overlayView.width.takeIf { it > 0 } ?: 1920
+            val h = overlayView.height.takeIf { it > 0 } ?: 1080
+            val reset = prefs.resetCalibration(w, h, overlayView.config.orientation)
+            overlayView.config.left = reset.left
+            overlayView.config.top = reset.top
+            overlayView.config.right = reset.right
+            overlayView.config.bottom = reset.bottom
+            overlayView.invalidate()
         }
 
         // Opacity Slider

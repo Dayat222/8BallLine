@@ -92,6 +92,18 @@
             android:textColor="@color/text_primary"
             android:textSize="12sp" />
 
+        <!-- Reset Posisi Meja ke Tengah Layar -->
+        <Button
+            android:id="@+id/btnResetTableInOverlay"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_marginTop="6dp"
+            android:backgroundTint="@color/surface_card"
+            android:text="Reset Posisi Meja ke Layar"
+            android:textAllCaps="false"
+            android:textColor="@color/neon_cyan"
+            android:textSize="11sp" />
+
         <!-- Target Pocket Selector (inline, aman untuk WindowManager overlay tanpa PopupWindow) -->
         <TextView
             android:layout_width="wrap_content"
