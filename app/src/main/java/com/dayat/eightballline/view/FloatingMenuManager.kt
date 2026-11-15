@@ -46,6 +46,10 @@ class FloatingMenuManager(
     private val btnQuickBL: TextView = menuView.findViewById(R.id.btnQuickBL)
     private val btnQuickMR: TextView = menuView.findViewById(R.id.btnQuickMR)
     private val btnQuickBR: TextView = menuView.findViewById(R.id.btnQuickBR)
+    private val btnQuickBounce0: TextView = menuView.findViewById(R.id.btnQuickBounce0)
+    private val btnQuickBounce1: TextView = menuView.findViewById(R.id.btnQuickBounce1)
+    private val btnQuickBounce2: TextView = menuView.findViewById(R.id.btnQuickBounce2)
+    private val btnQuickBounce3: TextView = menuView.findViewById(R.id.btnQuickBounce3)
     private val btnQuickDir: TextView = menuView.findViewById(R.id.btnQuickDir)
     private val btnQuickRotate: TextView = menuView.findViewById(R.id.btnQuickRotate)
     private var isDockVertical = false
@@ -67,6 +71,11 @@ class FloatingMenuManager(
     private val btnDirAll: TextView = menuView.findViewById(R.id.btnDirAll)
     private val btnDirTB: TextView = menuView.findViewById(R.id.btnDirTB)
     private val btnDirLR: TextView = menuView.findViewById(R.id.btnDirLR)
+
+    private val btnBounce0: TextView = menuView.findViewById(R.id.btnBounce0)
+    private val btnBounce1: TextView = menuView.findViewById(R.id.btnBounce1)
+    private val btnBounce2: TextView = menuView.findViewById(R.id.btnBounce2)
+    private val btnBounce3: TextView = menuView.findViewById(R.id.btnBounce3)
 
     private val btnToggleCalibration: Button = menuView.findViewById(R.id.btnToggleCalibration)
     private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
@@ -111,6 +120,24 @@ class FloatingMenuManager(
             btnDirAll to BankDirection.ALL,
             btnDirTB to BankDirection.TOP_BOTTOM,
             btnDirLR to BankDirection.LEFT_RIGHT
+        )
+    }
+
+    private val quickBounceButtons by lazy {
+        listOf(
+            btnQuickBounce0 to 0,
+            btnQuickBounce1 to 1,
+            btnQuickBounce2 to 2,
+            btnQuickBounce3 to 3
+        )
+    }
+
+    private val bounceButtons by lazy {
+        listOf(
+            btnBounce0 to 0,
+            btnBounce1 to 1,
+            btnBounce2 to 2,
+            btnBounce3 to 3
         )
     }
 
@@ -166,6 +193,7 @@ class FloatingMenuManager(
         setupAimPinDrag()
         setupListeners()
         setupPocketGrid()
+        setupBounceGrid()
         setupDirectionGrid()
         setupColorPicker()
 
@@ -257,6 +285,12 @@ class FloatingMenuManager(
         for ((btn, pocket) in quickPocketButtons) {
             attachDragOrClick(btn) {
                 selectPocket(pocket)
+            }
+        }
+
+        for ((btn, bounce) in quickBounceButtons) {
+            attachDragOrClick(btn) {
+                selectBounceCount(bounce)
             }
         }
 
@@ -481,6 +515,41 @@ class FloatingMenuManager(
                 cornerRadius = 5f * density
                 setColor(bgColor)
                 setStroke(((if (isSelected) 1.8f else 0.8f) * density).toInt(), strokeColor)
+            }
+        }
+    }
+
+    private fun selectBounceCount(bounce: Int) {
+        overlayView.config.bounceCount = bounce.coerceIn(0, 3)
+        overlayView.invalidate()
+        prefs.saveConfig(overlayView.config)
+        updateBounceHighlights()
+    }
+
+    private fun setupBounceGrid() {
+        updateBounceHighlights()
+        for ((btn, bounce) in bounceButtons) {
+            btn.setOnClickListener {
+                selectBounceCount(bounce)
+            }
+        }
+    }
+
+    private fun updateBounceHighlights() {
+        val density = themedContext.resources.displayMetrics.density
+        val active = overlayView.config.bounceCount
+
+        for ((btn, bounce) in bounceButtons + quickBounceButtons) {
+            val isSelected = bounce == active
+            btn.setTextColor(if (isSelected) 0xFF000000.toInt() else 0xFFE2E8F0.toInt())
+            btn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 5f * density
+                setColor(if (isSelected) 0xFFF59E0B.toInt() else 0xFF111827.toInt())
+                setStroke(
+                    ((if (isSelected) 1.5f else 0.8f) * density).toInt(),
+                    if (isSelected) 0xFFF59E0B.toInt() else 0x33FFFFFF
+                )
             }
         }
     }

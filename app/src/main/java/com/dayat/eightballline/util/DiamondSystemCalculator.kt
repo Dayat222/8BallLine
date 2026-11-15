@@ -6,6 +6,7 @@ import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.model.TableOrientation
 import kotlin.math.abs
+import kotlin.math.hypot
 
 data class BankTrajectory(
     val start: PointF2D,
@@ -14,7 +15,8 @@ data class BankTrajectory(
     val targetPocket: PointF2D,
     val label: String,
     val pocketType: Pocket,
-    val isHalfDiamond: Boolean = false
+    val isHalfDiamond: Boolean = false,
+    val points: List<PointF2D> = listOf(start, cushionHit1, targetPocket)
 )
 
 object DiamondSystemCalculator {
@@ -211,134 +213,258 @@ object DiamondSystemCalculator {
     }
 
     /**
-     * Menghitung jalur pantulan 1-cushion yang TEPAT melewati titik bola target (ballPos)
-     * menuju lubang tujuan aktif.
+     * Menghitung jalur bidik langsung (0 pantul) atau 1, 2, 3 pantulan melalui titik bola (ballPos)
+     * menuju lubang tujuan aktif dengan metode refleksi cermin + validasi ray-tracing meja.
      */
     fun calculateAimPinTrajectories(config: TableConfig, ballPos: PointF2D): List<BankTrajectory> {
         val result = mutableListOf<BankTrajectory>()
         val pockets = getPocketPositions(config)
         val activeFilter = config.activePocket
+        val bounceCount = config.bounceCount.coerceIn(0, 3)
 
         val includeTopBottom = config.bankDirection == BankDirection.ALL ||
                 config.bankDirection == BankDirection.TOP_BOTTOM
         val includeLeftRight = config.bankDirection == BankDirection.ALL ||
                 config.bankDirection == BankDirection.LEFT_RIGHT
 
+        // Clamp sedikit ke dalam meja agar titik pantul tidak degeneratif saat bola menempel rel
+        val bx = ballPos.x.coerceIn(config.left + 2f, config.right - 2f)
+        val by = ballPos.y.coerceIn(config.top + 2f, config.bottom - 2f)
+        val clampedBall = PointF2D(bx, by)
+
+        val allPocketPositions = pockets.values.toList()
+
         for ((pocketType, pocketPos) in pockets) {
             if (activeFilter != Pocket.ALL && activeFilter != pocketType) {
                 continue
             }
 
-            if (includeTopBottom) {
-                // Pantul via Top Rail
-                if (pocketPos.y > config.top + 5f) {
-                    val virtualY = 2f * config.top - pocketPos.y
-                    val denom = virtualY - ballPos.y
-                    if (abs(denom) > 1f) {
-                        val t = (config.top - ballPos.y) / denom
-                        if (t in 0.001f..0.999f) {
-                            val hitX = ballPos.x + t * (pocketPos.x - ballPos.x)
-                            if (hitX in config.left..config.right) {
-                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 8f else 4f
-                                val diamondVal = ((hitX - config.left) / config.width) * segments
-                                result.add(
-                                    BankTrajectory(
-                                        start = ballPos,
-                                        cushionHit1 = PointF2D(hitX, config.top),
-                                        targetPocket = pocketPos,
-                                        label = String.format("A %.1f", diamondVal),
-                                        pocketType = pocketType,
-                                        isHalfDiamond = false
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Pantul via Bottom Rail
-                if (pocketPos.y < config.bottom - 5f) {
-                    val virtualY = 2f * config.bottom - pocketPos.y
-                    val denom = virtualY - ballPos.y
-                    if (abs(denom) > 1f) {
-                        val t = (config.bottom - ballPos.y) / denom
-                        if (t in 0.001f..0.999f) {
-                            val hitX = ballPos.x + t * (pocketPos.x - ballPos.x)
-                            if (hitX in config.left..config.right) {
-                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 8f else 4f
-                                val diamondVal = ((hitX - config.left) / config.width) * segments
-                                result.add(
-                                    BankTrajectory(
-                                        start = ballPos,
-                                        cushionHit1 = PointF2D(hitX, config.bottom),
-                                        targetPocket = pocketPos,
-                                        label = String.format("B %.1f", diamondVal),
-                                        pocketType = pocketType,
-                                        isHalfDiamond = false
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
+            if (bounceCount == 0) {
+                result.add(
+                    BankTrajectory(
+                        start = clampedBall,
+                        cushionHit1 = pocketPos,
+                        targetPocket = pocketPos,
+                        label = "Langsung",
+                        pocketType = pocketType,
+                        isHalfDiamond = false,
+                        points = listOf(clampedBall, pocketPos)
+                    )
+                )
+                continue
             }
 
+            val firstEdges = mutableListOf<RailEdge>()
+            if (includeTopBottom) {
+                firstEdges.add(RailEdge.TOP)
+                firstEdges.add(RailEdge.BOTTOM)
+            }
             if (includeLeftRight) {
-                // Pantul via Left Rail
-                if (pocketPos.x > config.left + 5f) {
-                    val virtualX = 2f * config.left - pocketPos.x
-                    val denom = virtualX - ballPos.x
-                    if (abs(denom) > 1f) {
-                        val t = (config.left - ballPos.x) / denom
-                        if (t in 0.001f..0.999f) {
-                            val hitY = ballPos.y + t * (pocketPos.y - ballPos.y)
-                            if (hitY in config.top..config.bottom) {
-                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 4f else 8f
-                                val diamondVal = ((hitY - config.top) / config.height) * segments
-                                result.add(
-                                    BankTrajectory(
-                                        start = ballPos,
-                                        cushionHit1 = PointF2D(config.left, hitY),
-                                        targetPocket = pocketPos,
-                                        label = String.format("Kr %.1f", diamondVal),
-                                        pocketType = pocketType,
-                                        isHalfDiamond = false
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
+                firstEdges.add(RailEdge.LEFT)
+                firstEdges.add(RailEdge.RIGHT)
+            }
 
-                // Pantul via Right Rail
-                if (pocketPos.x < config.right - 5f) {
-                    val virtualX = 2f * config.right - pocketPos.x
-                    val denom = virtualX - ballPos.x
-                    if (abs(denom) > 1f) {
-                        val t = (config.right - ballPos.x) / denom
-                        if (t in 0.001f..0.999f) {
-                            val hitY = ballPos.y + t * (pocketPos.y - ballPos.y)
-                            if (hitY in config.top..config.bottom) {
-                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 4f else 8f
-                                val diamondVal = ((hitY - config.top) / config.height) * segments
-                                result.add(
-                                    BankTrajectory(
-                                        start = ballPos,
-                                        cushionHit1 = PointF2D(config.right, hitY),
-                                        targetPocket = pocketPos,
-                                        label = String.format("Kn %.1f", diamondVal),
-                                        pocketType = pocketType,
-                                        isHalfDiamond = false
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
+            val validLastEdges = getValidLastEdgesForPocket(config, pocketPos)
+            val sequences = buildEdgeSequences(firstEdges, validLastEdges, bounceCount)
+
+            for (seq in sequences) {
+                val path = traceMultiBouncePath(
+                    config = config,
+                    ballPos = clampedBall,
+                    pocketPos = pocketPos,
+                    edgeSequence = seq,
+                    allPockets = allPocketPositions
+                ) ?: continue
+
+                result.add(
+                    BankTrajectory(
+                        start = path.first(),
+                        cushionHit1 = path[1],
+                        cushionHit2 = if (path.size > 3) path[2] else null,
+                        targetPocket = path.last(),
+                        label = "${bounceCount}P",
+                        pocketType = pocketType,
+                        isHalfDiamond = false,
+                        points = path
+                    )
+                )
             }
         }
 
         return result
+    }
+
+    private fun getValidLastEdgesForPocket(config: TableConfig, pocketPos: PointF2D): Set<RailEdge> {
+        val valid = mutableSetOf<RailEdge>()
+        if (pocketPos.y > config.top + 5f) valid.add(RailEdge.TOP)
+        if (pocketPos.y < config.bottom - 5f) valid.add(RailEdge.BOTTOM)
+        if (pocketPos.x > config.left + 5f) valid.add(RailEdge.LEFT)
+        if (pocketPos.x < config.right - 5f) valid.add(RailEdge.RIGHT)
+        return valid
+    }
+
+    private fun buildEdgeSequences(
+        firstEdges: List<RailEdge>,
+        validLastEdges: Set<RailEdge>,
+        bounceCount: Int
+    ): List<List<RailEdge>> {
+        val sequences = mutableListOf<List<RailEdge>>()
+        val allEdges = RailEdge.values()
+
+        fun dfs(current: MutableList<RailEdge>) {
+            val depth = current.size
+            if (depth == bounceCount) {
+                if (current.last() in validLastEdges) {
+                    sequences.add(current.toList())
+                }
+                return
+            }
+            val candidates = if (depth == 0) firstEdges else allEdges.filter { it != current.last() }
+            for (edge in candidates) {
+                if (depth == bounceCount - 1 && edge !in validLastEdges) continue
+                current.add(edge)
+                dfs(current)
+                current.removeAt(current.size - 1)
+            }
+        }
+
+        dfs(mutableListOf())
+        return sequences
+    }
+
+    private fun reflectPointAcrossEdge(p: PointF2D, edge: RailEdge, config: TableConfig): PointF2D {
+        return when (edge) {
+            RailEdge.TOP -> PointF2D(p.x, 2f * config.top - p.y)
+            RailEdge.BOTTOM -> PointF2D(p.x, 2f * config.bottom - p.y)
+            RailEdge.LEFT -> PointF2D(2f * config.left - p.x, p.y)
+            RailEdge.RIGHT -> PointF2D(2f * config.right - p.x, p.y)
+        }
+    }
+
+    private fun traceMultiBouncePath(
+        config: TableConfig,
+        ballPos: PointF2D,
+        pocketPos: PointF2D,
+        edgeSequence: List<RailEdge>,
+        allPockets: List<PointF2D>
+    ): List<PointF2D>? {
+        // 1. Hitung bayangan virtual lubang mundur dari pantulan terakhir ke pertama
+        var virtualTarget = pocketPos
+        for (i in edgeSequence.indices.reversed()) {
+            virtualTarget = reflectPointAcrossEdge(virtualTarget, edgeSequence[i], config)
+        }
+
+        var dirX = virtualTarget.x - ballPos.x
+        var dirY = virtualTarget.y - ballPos.y
+        if (abs(dirX) < 0.001f && abs(dirY) < 0.001f) return null
+
+        val path = mutableListOf(ballPos)
+        var cur = ballPos
+        var prevEdge: RailEdge? = null
+        val pocketClearance = 14f
+
+        // 2. Ray-trace maju pantulan demi pantulan, pastikan memantul tepat sesuai urutan rel
+        for (expectedEdge in edgeSequence) {
+            val hit = findFirstWallHit(cur, dirX, dirY, config, prevEdge) ?: return null
+            if (hit.first != expectedEdge) {
+                return null
+            }
+            val hitPoint = hit.second
+
+            // Pastikan titik pantul tidak langsung masuk ke salah satu lubang di tengah jalan
+            for (p in allPockets) {
+                if (hypot((hitPoint.x - p.x).toDouble(), (hitPoint.y - p.y).toDouble()) < pocketClearance) {
+                    return null
+                }
+            }
+
+            path.add(hitPoint)
+            cur = hitPoint
+            prevEdge = expectedEdge
+
+            when (expectedEdge) {
+                RailEdge.TOP, RailEdge.BOTTOM -> dirY = -dirY
+                RailEdge.LEFT, RailEdge.RIGHT -> dirX = -dirX
+            }
+        }
+
+        // 3. Pastikan segmen terakhir benar-benar menuju lubang tanpa membentur rel lain lebih dulu
+        val distToPocket = hypot((pocketPos.x - cur.x).toDouble(), (pocketPos.y - cur.y).toDouble()).toFloat()
+        if (distToPocket < 5f) return null
+        val dirLen = hypot(dirX.toDouble(), dirY.toDouble()).toFloat()
+        if (dirLen < 0.001f) return null
+
+        val tPocket = distToPocket / dirLen
+        val nextWall = findFirstWallHit(cur, dirX, dirY, config, prevEdge)
+        if (nextWall != null) {
+            val distToWall = hypot((nextWall.second.x - cur.x).toDouble(), (nextWall.second.y - cur.y).toDouble()).toFloat()
+            if (distToWall + 6f < distToPocket) {
+                return null
+            }
+        }
+        if (tPocket <= 0f) return null
+
+        path.add(pocketPos)
+        return path
+    }
+
+    private fun findFirstWallHit(
+        origin: PointF2D,
+        dx: Float,
+        dy: Float,
+        config: TableConfig,
+        excludeEdge: RailEdge?
+    ): Pair<RailEdge, PointF2D>? {
+        val eps = 0.0001f
+        val tol = 0.5f
+        var bestT = Float.MAX_VALUE
+        var bestHit: Pair<RailEdge, PointF2D>? = null
+
+        if (excludeEdge != RailEdge.LEFT && abs(dx) > eps) {
+            val t = (config.left - origin.x) / dx
+            if (t > 0.0005f && t < bestT) {
+                val y = origin.y + t * dy
+                if (y in (config.top - tol)..(config.bottom + tol)) {
+                    bestT = t
+                    bestHit = RailEdge.LEFT to PointF2D(config.left, y.coerceIn(config.top, config.bottom))
+                }
+            }
+        }
+
+        if (excludeEdge != RailEdge.RIGHT && abs(dx) > eps) {
+            val t = (config.right - origin.x) / dx
+            if (t > 0.0005f && t < bestT) {
+                val y = origin.y + t * dy
+                if (y in (config.top - tol)..(config.bottom + tol)) {
+                    bestT = t
+                    bestHit = RailEdge.RIGHT to PointF2D(config.right, y.coerceIn(config.top, config.bottom))
+                }
+            }
+        }
+
+        if (excludeEdge != RailEdge.TOP && abs(dy) > eps) {
+            val t = (config.top - origin.y) / dy
+            if (t > 0.0005f && t < bestT) {
+                val x = origin.x + t * dx
+                if (x in (config.left - tol)..(config.right + tol)) {
+                    bestT = t
+                    bestHit = RailEdge.TOP to PointF2D(x.coerceIn(config.left, config.right), config.top)
+                }
+            }
+        }
+
+        if (excludeEdge != RailEdge.BOTTOM && abs(dy) > eps) {
+            val t = (config.bottom - origin.y) / dy
+            if (t > 0.0005f && t < bestT) {
+                val x = origin.x + t * dx
+                if (x in (config.left - tol)..(config.right + tol)) {
+                    bestT = t
+                    bestHit = RailEdge.BOTTOM to PointF2D(x.coerceIn(config.left, config.right), config.bottom)
+                }
+            }
+        }
+
+        return bestHit
     }
 
     private fun addRailTrajectories(

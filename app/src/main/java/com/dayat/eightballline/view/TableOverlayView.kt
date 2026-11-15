@@ -184,37 +184,38 @@ class TableOverlayView(context: Context) : View(context) {
             canvas.drawCircle(pos.x, pos.y, 22f, pocketPaint)
         }
 
-        // 2. Gambar Jalur Pin Bidik Bola (1-cushion akurat melalui titik bola target)
+        // 2. Gambar Jalur Pin Bidik Bola (0 = Langsung, 1 / 2 / 3 pantulan)
         val activeAimTarget = aimTarget
         if (config.showBankShotLines && activeAimTarget != null) {
             val aimTrajectories = DiamondSystemCalculator.calculateAimPinTrajectories(config, activeAimTarget)
             for (traj in aimTrajectories) {
+                val pts = traj.points
+                if (pts.size < 2) continue
+
                 val trajColor = if (config.colorByPocket) getPocketColor(traj.pocketType) else config.lineColor
                 aimPinLinePaint.color = trajColor
                 aimPinLinePaint.alpha = config.opacity
-                aimPinLinePaint.strokeWidth = config.lineWidth
 
-                // Garis datang: bola target -> titik pantul bantalan
-                canvas.drawLine(
-                    traj.start.x, traj.start.y,
-                    traj.cushionHit1.x, traj.cushionHit1.y,
-                    aimPinLinePaint
-                )
-                // Garis pantul: titik pantul bantalan -> lubang
-                aimPinLinePaint.strokeWidth = (config.lineWidth * 0.78f).coerceAtLeast(1.5f)
-                canvas.drawLine(
-                    traj.cushionHit1.x, traj.cushionHit1.y,
-                    traj.targetPocket.x, traj.targetPocket.y,
-                    aimPinLinePaint
-                )
+                for (i in 0 until pts.size - 1) {
+                    // Segmen pertama (dari bola) paling tegas; segmen pantulan berikutnya sedikit lebih tipis
+                    aimPinLinePaint.strokeWidth = if (i == 0) {
+                        config.lineWidth
+                    } else {
+                        (config.lineWidth * 0.78f).coerceAtLeast(1.5f)
+                    }
+                    canvas.drawLine(pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y, aimPinLinePaint)
+                }
 
-                // Titik pantul terang pada bantalan
-                bounceDotPaint.color = 0xFFFFFFFF.toInt()
-                bounceDotPaint.alpha = config.opacity
-                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 7.5f, bounceDotPaint)
-                bounceDotPaint.color = trajColor
-                bounceDotPaint.alpha = config.opacity
-                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 4.8f, bounceDotPaint)
+                // Titik pantul terang pada setiap bantalan
+                for (i in 1 until pts.size - 1) {
+                    val bouncePt = pts[i]
+                    bounceDotPaint.color = 0xFFFFFFFF.toInt()
+                    bounceDotPaint.alpha = config.opacity
+                    canvas.drawCircle(bouncePt.x, bouncePt.y, 7.5f, bounceDotPaint)
+                    bounceDotPaint.color = trajColor
+                    bounceDotPaint.alpha = config.opacity
+                    canvas.drawCircle(bouncePt.x, bouncePt.y, 4.8f, bounceDotPaint)
+                }
             }
         }
 

@@ -29,6 +29,7 @@ class PreferencesManager(context: Context) {
             putString("table_orientation", config.orientation.name)
             putInt("active_pocket", config.activePocket.id)
             putInt("bank_direction", config.bankDirection.id)
+            putInt("bounce_count", config.bounceCount)
             putBoolean("color_by_pocket", config.colorByPocket)
             putInt("line_color", config.lineColor)
             putFloat("line_width_v3", config.lineWidth)
@@ -99,6 +100,7 @@ class PreferencesManager(context: Context) {
         val directionId = prefs.getInt("bank_direction", BankDirection.ALL.id)
         val bankDirection = BankDirection.values().firstOrNull { it.id == directionId } ?: BankDirection.ALL
 
+        val bounceCount = prefs.getInt("bounce_count", 1).coerceIn(0, 3)
         val colorByPocket = prefs.getBoolean("color_by_pocket", true)
         val lineColor = prefs.getInt("line_color", 0xFF00E5FF.toInt())
         val lineWidth = prefs.getFloat("line_width_v3", 2.6f)
@@ -116,6 +118,7 @@ class PreferencesManager(context: Context) {
             orientation = orientation,
             activePocket = activePocket,
             bankDirection = bankDirection,
+            bounceCount = bounceCount,
             colorByPocket = colorByPocket,
             lineColor = lineColor,
             lineWidth = lineWidth,
