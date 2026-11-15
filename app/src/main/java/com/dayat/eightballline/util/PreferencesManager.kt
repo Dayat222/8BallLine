@@ -25,7 +25,7 @@ class PreferencesManager(context: Context) {
             putFloat("line_width", config.lineWidth)
             putInt("line_opacity", config.opacity)
             putBoolean("show_diamonds", config.showDiamonds)
-            putBoolean("show_half_diamonds", config.showHalfDiamonds)
+            putBoolean("show_half_diamond_lines", config.showHalfDiamonds)
             putBoolean("show_lines", config.showBankShotLines)
             apply()
         }
@@ -69,7 +69,7 @@ class PreferencesManager(context: Context) {
         val opacity = prefs.getInt("line_opacity", 210)
 
         val showDiamonds = prefs.getBoolean("show_diamonds", true)
-        val showHalfDiamonds = prefs.getBoolean("show_half_diamonds", true)
+        val showHalfDiamonds = prefs.getBoolean("show_half_diamond_lines", false)
         val showLines = prefs.getBoolean("show_lines", true)
 
         return TableConfig(

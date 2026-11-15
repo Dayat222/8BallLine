@@ -217,13 +217,11 @@ class TableOverlayView(context: Context) : View(context) {
                 }
             }
 
-            // Gambar titik tengah (half-diamonds) di antara titik-titik utama
-            if (config.showHalfDiamonds) {
-                val halfDiamonds = DiamondSystemCalculator.getHalfDiamondPoints(config)
-                for ((_, points) in halfDiamonds) {
-                    for (pt in points) {
-                        canvas.drawCircle(pt.x, pt.y, 3.8f, halfDiamondPaint)
-                    }
+            // Titik tengah (half-diamonds) di antara titik-titik utama tetap ditampilkan di rel sebagai patokan
+            val halfDiamonds = DiamondSystemCalculator.getHalfDiamondPoints(config)
+            for ((_, points) in halfDiamonds) {
+                for (pt in points) {
+                    canvas.drawCircle(pt.x, pt.y, 3.8f, halfDiamondPaint)
                 }
             }
         }

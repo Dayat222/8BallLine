@@ -124,6 +124,13 @@ object DiamondSystemCalculator {
                 continue
             }
 
+            // Saat mode "Semua Lubang", tampilkan garis utama ke 4 lubang sudut agar tidak terlalu ramai.
+            // Garis ke lubang tengah ditampilkan saat lubang tengah dipilih spesifik.
+            val isMiddlePocket = pocketType == Pocket.MIDDLE_LEFT || pocketType == Pocket.MIDDLE_RIGHT
+            if (activeFilter == Pocket.ALL && isMiddlePocket) {
+                continue
+            }
+
             // 1. Pantulan Atas <-> Bawah (via Top Rail & Bottom Rail)
             if (includeTopBottom) {
                 val isBottomPocket = pocketType == Pocket.BOTTOM_LEFT ||

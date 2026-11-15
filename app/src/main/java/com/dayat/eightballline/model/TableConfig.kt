@@ -35,7 +35,7 @@ data class TableConfig(
     var lineWidth: Float = 3f,
     var opacity: Int = 200, // 0 - 255
     var showDiamonds: Boolean = true,
-    var showHalfDiamonds: Boolean = true,
+    var showHalfDiamonds: Boolean = false,
     var showBankShotLines: Boolean = true
 ) {
     val width: Float get() = (right - left).coerceAtLeast(10f)
