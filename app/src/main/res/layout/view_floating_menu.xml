@@ -104,7 +104,7 @@
             android:textSize="11sp"
             android:textStyle="bold" />
 
-        <!-- Pemilih Cepat Jumlah Pantulan: 0 (Langsung), 1, 2, 3 Pantul -->
+        <!-- Pemilih Cepat Jumlah Pantulan: 0 (Langsung), 1, 2 Pantul -->
         <TextView
             android:id="@+id/btnQuickBounce0"
             android:layout_width="19dp"
@@ -134,17 +134,6 @@
             android:layout_margin="1dp"
             android:gravity="center"
             android:text="2"
-            android:textColor="@color/text_primary"
-            android:textSize="10sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/btnQuickBounce3"
-            android:layout_width="19dp"
-            android:layout_height="20dp"
-            android:layout_margin="1dp"
-            android:gravity="center"
-            android:text="3"
             android:textColor="@color/text_primary"
             android:textSize="10sp"
             android:textStyle="bold" />
@@ -421,21 +410,9 @@
                     android:id="@+id/btnBounce2"
                     android:layout_width="0dp"
                     android:layout_height="24dp"
-                    android:layout_marginEnd="3dp"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:text="2 Pantul"
-                    android:textColor="@color/text_primary"
-                    android:textSize="9sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/btnBounce3"
-                    android:layout_width="0dp"
-                    android:layout_height="24dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="3 Pantul"
                     android:textColor="@color/text_primary"
                     android:textSize="9sp"
                     android:textStyle="bold" />

@@ -31,7 +31,7 @@ data class TableConfig(
     var orientation: TableOrientation = TableOrientation.LANDSCAPE,
     var activePocket: Pocket = Pocket.ALL,
     var bankDirection: BankDirection = BankDirection.ALL,
-    var enabledBounces: MutableSet<Int> = mutableSetOf(1), // Kombinasi bebas: 0 = Langsung, 1, 2, 3 pantul
+    var enabledBounces: MutableSet<Int> = mutableSetOf(1), // Kombinasi bebas: 0 = Langsung, 1, 2 pantul
     var colorByPocket: Boolean = true,
     var lineColor: Int = 0xFF00E5FF.toInt(), // Cyan neon
     var lineWidth: Float = 2.6f,

@@ -104,10 +104,11 @@ class PreferencesManager(context: Context) {
             val csv = prefs.getString("enabled_bounces_csv", "1").orEmpty()
             csv.split(",")
                 .mapNotNull { it.trim().toIntOrNull() }
-                .filter { it in 0..3 }
+                .filter { it in 0..2 }
                 .toMutableSet()
+                .also { if (it.isEmpty() && csv.contains("3")) it.add(1) }
         } else {
-            mutableSetOf(prefs.getInt("bounce_count", 1).coerceIn(0, 3))
+            mutableSetOf(prefs.getInt("bounce_count", 1).coerceIn(0, 2))
         }
         val colorByPocket = prefs.getBoolean("color_by_pocket", true)
         val lineColor = prefs.getInt("line_color", 0xFF00E5FF.toInt())

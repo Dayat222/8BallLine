@@ -49,7 +49,6 @@ class FloatingMenuManager(
     private val btnQuickBounce0: TextView = menuView.findViewById(R.id.btnQuickBounce0)
     private val btnQuickBounce1: TextView = menuView.findViewById(R.id.btnQuickBounce1)
     private val btnQuickBounce2: TextView = menuView.findViewById(R.id.btnQuickBounce2)
-    private val btnQuickBounce3: TextView = menuView.findViewById(R.id.btnQuickBounce3)
     private val btnQuickDir: TextView = menuView.findViewById(R.id.btnQuickDir)
     private val btnQuickRotate: TextView = menuView.findViewById(R.id.btnQuickRotate)
     private var isDockVertical = false
@@ -75,7 +74,6 @@ class FloatingMenuManager(
     private val btnBounce0: TextView = menuView.findViewById(R.id.btnBounce0)
     private val btnBounce1: TextView = menuView.findViewById(R.id.btnBounce1)
     private val btnBounce2: TextView = menuView.findViewById(R.id.btnBounce2)
-    private val btnBounce3: TextView = menuView.findViewById(R.id.btnBounce3)
 
     private val btnToggleCalibration: Button = menuView.findViewById(R.id.btnToggleCalibration)
     private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
@@ -127,8 +125,7 @@ class FloatingMenuManager(
         listOf(
             btnQuickBounce0 to 0,
             btnQuickBounce1 to 1,
-            btnQuickBounce2 to 2,
-            btnQuickBounce3 to 3
+            btnQuickBounce2 to 2
         )
     }
 
@@ -136,8 +133,7 @@ class FloatingMenuManager(
         listOf(
             btnBounce0 to 0,
             btnBounce1 to 1,
-            btnBounce2 to 2,
-            btnBounce3 to 3
+            btnBounce2 to 2
         )
     }
 

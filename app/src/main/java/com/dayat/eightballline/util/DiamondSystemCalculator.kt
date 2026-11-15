@@ -220,7 +220,7 @@ object DiamondSystemCalculator {
         val result = mutableListOf<BankTrajectory>()
         val pockets = getPocketPositions(config)
         val activeFilter = config.activePocket
-        val activeBounces = config.enabledBounces.filter { it in 0..3 }.sorted()
+        val activeBounces = config.enabledBounces.filter { it in 0..2 }.sorted()
         if (activeBounces.isEmpty()) return result
 
         val includeTopBottom = config.bankDirection == BankDirection.ALL ||
