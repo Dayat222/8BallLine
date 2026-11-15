@@ -141,15 +141,15 @@ class TableOverlayView(context: Context) : View(context) {
         linePaint.strokeWidth = config.lineWidth
 
         halfLinePaint.color = config.lineColor
-        halfLinePaint.alpha = (config.opacity * 0.45f).toInt().coerceIn(20, 255)
-        halfLinePaint.strokeWidth = (config.lineWidth * 0.68f).coerceAtLeast(1.0f)
+        halfLinePaint.alpha = (config.opacity * 0.68f).toInt().coerceIn(30, 255)
+        halfLinePaint.strokeWidth = (config.lineWidth * 0.72f).coerceAtLeast(1.3f)
 
         gridLinePaint.color = if (config.colorByPocket) 0xFFFFFFFF.toInt() else config.lineColor
-        gridLinePaint.alpha = (config.opacity * 0.18f).toInt().coerceIn(12, 70)
-        gridLinePaint.strokeWidth = 1f
+        gridLinePaint.alpha = (config.opacity * 0.25f).toInt().coerceIn(18, 95)
+        gridLinePaint.strokeWidth = (config.lineWidth * 0.45f).coerceAtLeast(1.1f)
 
         halfDiamondPaint.color = if (config.colorByPocket) 0xFFFFFFFF.toInt() else config.lineColor
-        halfDiamondPaint.alpha = (config.opacity * 0.75f).toInt().coerceIn(40, 255)
+        halfDiamondPaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(50, 255)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -196,7 +196,7 @@ class TableOverlayView(context: Context) : View(context) {
         if (config.showBankShotLines) {
             val trajectories = DiamondSystemCalculator.calculateTrajectories(config)
             val mainAlpha = config.opacity
-            val halfAlpha = (config.opacity * 0.45f).toInt().coerceIn(20, 255)
+            val halfAlpha = (config.opacity * 0.68f).toInt().coerceIn(30, 255)
             for (traj in trajectories) {
                 val activePaint = if (traj.isHalfDiamond) halfLinePaint else linePaint
                 if (config.colorByPocket) {

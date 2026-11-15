@@ -52,6 +52,8 @@ class FloatingMenuManager(
     private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
     private val tvOpacityLabel: TextView = menuView.findViewById(R.id.tvOpacityLabel)
     private val seekBarOpacity: SeekBar = menuView.findViewById(R.id.seekBarOpacity)
+    private val tvLineWidthLabel: TextView = menuView.findViewById(R.id.tvLineWidthLabel)
+    private val seekBarLineWidth: SeekBar = menuView.findViewById(R.id.seekBarLineWidth)
     private val btnFloatColorCyan: View = menuView.findViewById(R.id.btnFloatColorCyan)
     private val btnFloatColorGreen: View = menuView.findViewById(R.id.btnFloatColorGreen)
     private val btnFloatColorYellow: View = menuView.findViewById(R.id.btnFloatColorYellow)
@@ -217,13 +219,30 @@ class FloatingMenuManager(
 
         // Opacity Slider
         seekBarOpacity.progress = overlayView.config.opacity
-        tvOpacityLabel.text = "Opasitas (${(overlayView.config.opacity * 100) / 255}%)"
+        tvOpacityLabel.text = "Kecerahan / Opasitas (${(overlayView.config.opacity * 100) / 255}%)"
         seekBarOpacity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val clamped = progress.coerceIn(30, 255)
+                val clamped = progress.coerceIn(40, 255)
                 overlayView.config.opacity = clamped
                 overlayView.invalidate()
-                tvOpacityLabel.text = "Opasitas (${(clamped * 100) / 255}%)"
+                tvOpacityLabel.text = "Kecerahan / Opasitas (${(clamped * 100) / 255}%)"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                prefs.saveConfig(overlayView.config)
+            }
+        })
+
+        // Line Width Slider (1.0px - 6.0px)
+        val initialWidthProgress = ((overlayView.config.lineWidth - 1.0f) * 10f).toInt().coerceIn(0, 50)
+        seekBarLineWidth.progress = initialWidthProgress
+        tvLineWidthLabel.text = String.format("Ketebalan Garis (%.1fpx)", overlayView.config.lineWidth)
+        seekBarLineWidth.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val widthPx = 1.0f + (progress * 0.1f)
+                overlayView.config.lineWidth = widthPx
+                overlayView.invalidate()
+                tvLineWidthLabel.text = String.format("Ketebalan Garis (%.1fpx)", widthPx)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {

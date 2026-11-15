@@ -296,7 +296,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Opasitas (75%)"
+                android:text="Kecerahan / Opasitas (94%)"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -306,7 +306,25 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:max="255"
-                android:progress="190" />
+                android:progress="240" />
+
+            <!-- Line Width Slider -->
+            <TextView
+                android:id="@+id/tvLineWidthLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Ketebalan Garis (2.6px)"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp" />
+
+            <SeekBar
+                android:id="@+id/seekBarLineWidth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:max="50"
+                android:progress="16" />
 
             <!-- Warna Garis Tunggal (In-Game Color Picker) -->
             <TextView

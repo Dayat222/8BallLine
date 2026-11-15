@@ -31,8 +31,8 @@ class PreferencesManager(context: Context) {
             putInt("bank_direction", config.bankDirection.id)
             putBoolean("color_by_pocket", config.colorByPocket)
             putInt("line_color", config.lineColor)
-            putFloat("line_width_v2", config.lineWidth)
-            putInt("line_opacity", config.opacity)
+            putFloat("line_width_v3", config.lineWidth)
+            putInt("line_opacity_v2", config.opacity)
             putBoolean("show_diamonds", config.showDiamonds)
             putBoolean("show_half_lines_v2", config.showHalfDiamonds)
             putBoolean("show_lines", config.showBankShotLines)
@@ -101,8 +101,8 @@ class PreferencesManager(context: Context) {
 
         val colorByPocket = prefs.getBoolean("color_by_pocket", true)
         val lineColor = prefs.getInt("line_color", 0xFF00E5FF.toInt())
-        val lineWidth = prefs.getFloat("line_width_v2", 1.5f)
-        val opacity = prefs.getInt("line_opacity", 190)
+        val lineWidth = prefs.getFloat("line_width_v3", 2.6f)
+        val opacity = prefs.getInt("line_opacity_v2", 240)
 
         val showDiamonds = prefs.getBoolean("show_diamonds", true)
         val showHalfDiamonds = prefs.getBoolean("show_half_lines_v2", true)
