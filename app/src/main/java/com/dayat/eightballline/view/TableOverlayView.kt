@@ -25,6 +25,12 @@ class TableOverlayView(context: Context) : View(context) {
             invalidate()
         }
 
+    var aimTarget: PointF2D? = null
+        set(value) {
+            field = value
+            invalidate()
+        }
+
     var onCalibrationChanged: ((TableConfig) -> Unit)? = null
 
     // Paints
@@ -37,6 +43,15 @@ class TableOverlayView(context: Context) : View(context) {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
         pathEffect = DashPathEffect(floatArrayOf(10f, 8f), 0f)
+    }
+
+    private val aimPinLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+
+    private val bounceDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
     }
 
     private val gridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -193,28 +208,76 @@ class TableOverlayView(context: Context) : View(context) {
         }
 
         // 3. Gambar Garis Pantulan (Bank Shot Trajectories)
+        val activeAimTarget = aimTarget
         if (config.showBankShotLines) {
             val trajectories = DiamondSystemCalculator.calculateTrajectories(config)
-            val mainAlpha = config.opacity
-            val halfAlpha = (config.opacity * 0.68f).toInt().coerceIn(30, 255)
+            // Jika mode Bidik Bola aktif, redupkan garis statis agar jalur bidikan utama sangat menonjol
+            val dimFactor = if (activeAimTarget != null) 0.32f else 1.0f
+            val mainAlpha = (config.opacity * dimFactor).toInt().coerceIn(15, 255)
+            val halfAlpha = (config.opacity * 0.68f * dimFactor).toInt().coerceIn(12, 255)
+            val bounceLegWidth = (config.lineWidth * 0.65f).coerceAtLeast(1.2f)
+
             for (traj in trajectories) {
                 val activePaint = if (traj.isHalfDiamond) halfLinePaint else linePaint
                 if (config.colorByPocket) {
                     activePaint.color = getPocketColor(traj.pocketType)
-                    activePaint.alpha = if (traj.isHalfDiamond) halfAlpha else mainAlpha
+                } else {
+                    activePaint.color = config.lineColor
                 }
-                // Sinar datang (incoming ray)
+                activePaint.alpha = if (traj.isHalfDiamond) halfAlpha else mainAlpha
+                activePaint.strokeWidth = if (traj.isHalfDiamond) {
+                    (config.lineWidth * 0.72f).coerceAtLeast(1.3f)
+                } else {
+                    config.lineWidth
+                }
+
+                // Sinar datang / arah bidik
                 canvas.drawLine(
                     traj.start.x, traj.start.y,
                     traj.cushionHit1.x, traj.cushionHit1.y,
                     activePaint
                 )
-                // Sinar pantul (reflected ray)
+
+                // Sinar pantul menuju lubang dibuat sedikit lebih tipis agar arah pantul mudah dibedakan
+                if (!traj.isHalfDiamond) {
+                    activePaint.strokeWidth = bounceLegWidth
+                }
                 canvas.drawLine(
                     traj.cushionHit1.x, traj.cushionHit1.y,
                     traj.targetPocket.x, traj.targetPocket.y,
                     activePaint
                 )
+            }
+        }
+
+        // 3b. Gambar Jalur Bidik Tepat melalui Pin Target Bola (jika aktif)
+        if (activeAimTarget != null) {
+            val aimTrajectories = DiamondSystemCalculator.calculateAimPinTrajectories(config, activeAimTarget)
+            for (traj in aimTrajectories) {
+                val trajColor = if (config.colorByPocket) getPocketColor(traj.pocketType) else config.lineColor
+                aimPinLinePaint.color = trajColor
+                aimPinLinePaint.alpha = 255
+                aimPinLinePaint.strokeWidth = (config.lineWidth * 1.45f).coerceAtLeast(3.5f)
+
+                // Garis dari bola ke titik pantul rel
+                canvas.drawLine(
+                    traj.start.x, traj.start.y,
+                    traj.cushionHit1.x, traj.cushionHit1.y,
+                    aimPinLinePaint
+                )
+                // Garis pantul dari rel ke lubang
+                aimPinLinePaint.strokeWidth = (config.lineWidth * 1.15f).coerceAtLeast(2.6f)
+                canvas.drawLine(
+                    traj.cushionHit1.x, traj.cushionHit1.y,
+                    traj.targetPocket.x, traj.targetPocket.y,
+                    aimPinLinePaint
+                )
+
+                // Titik pantul terang pada bantalan
+                bounceDotPaint.color = 0xFFFFFFFF.toInt()
+                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 8f, bounceDotPaint)
+                bounceDotPaint.color = trajColor
+                canvas.drawCircle(traj.cushionHit1.x, traj.cushionHit1.y, 5f, bounceDotPaint)
             }
         }
 

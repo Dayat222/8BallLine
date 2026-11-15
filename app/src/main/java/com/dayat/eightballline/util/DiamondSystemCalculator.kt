@@ -210,6 +210,141 @@ object DiamondSystemCalculator {
         return trajectories
     }
 
+    /**
+     * Menghitung jalur pantulan 1-cushion yang TEPAT melewati titik bola target (ballPos)
+     * menuju lubang tujuan aktif.
+     */
+    fun calculateAimPinTrajectories(config: TableConfig, ballPos: PointF2D): List<BankTrajectory> {
+        val result = mutableListOf<BankTrajectory>()
+        val pockets = getPocketPositions(config)
+        val activeFilter = config.activePocket
+
+        val includeTopBottom = config.bankDirection == BankDirection.ALL ||
+                config.bankDirection == BankDirection.TOP_BOTTOM
+        val includeLeftRight = config.bankDirection == BankDirection.ALL ||
+                config.bankDirection == BankDirection.LEFT_RIGHT
+
+        for ((pocketType, pocketPos) in pockets) {
+            if (activeFilter != Pocket.ALL && activeFilter != pocketType) {
+                continue
+            }
+            val isMiddlePocket = pocketType == Pocket.MIDDLE_LEFT || pocketType == Pocket.MIDDLE_RIGHT
+            if (activeFilter == Pocket.ALL && isMiddlePocket) {
+                continue
+            }
+
+            if (includeTopBottom) {
+                // Pantul via Top Rail
+                if (pocketPos.y > config.top + 5f) {
+                    val virtualY = 2f * config.top - pocketPos.y
+                    val denom = virtualY - ballPos.y
+                    if (abs(denom) > 1f) {
+                        val t = (config.top - ballPos.y) / denom
+                        if (t in 0.001f..0.999f) {
+                            val hitX = ballPos.x + t * (pocketPos.x - ballPos.x)
+                            if (hitX in config.left..config.right) {
+                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 8f else 4f
+                                val diamondVal = ((hitX - config.left) / config.width) * segments
+                                result.add(
+                                    BankTrajectory(
+                                        start = ballPos,
+                                        cushionHit1 = PointF2D(hitX, config.top),
+                                        targetPocket = pocketPos,
+                                        label = String.format("A %.1f", diamondVal),
+                                        pocketType = pocketType,
+                                        isHalfDiamond = false
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Pantul via Bottom Rail
+                if (pocketPos.y < config.bottom - 5f) {
+                    val virtualY = 2f * config.bottom - pocketPos.y
+                    val denom = virtualY - ballPos.y
+                    if (abs(denom) > 1f) {
+                        val t = (config.bottom - ballPos.y) / denom
+                        if (t in 0.001f..0.999f) {
+                            val hitX = ballPos.x + t * (pocketPos.x - ballPos.x)
+                            if (hitX in config.left..config.right) {
+                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 8f else 4f
+                                val diamondVal = ((hitX - config.left) / config.width) * segments
+                                result.add(
+                                    BankTrajectory(
+                                        start = ballPos,
+                                        cushionHit1 = PointF2D(hitX, config.bottom),
+                                        targetPocket = pocketPos,
+                                        label = String.format("B %.1f", diamondVal),
+                                        pocketType = pocketType,
+                                        isHalfDiamond = false
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (includeLeftRight) {
+                // Pantul via Left Rail
+                if (pocketPos.x > config.left + 5f) {
+                    val virtualX = 2f * config.left - pocketPos.x
+                    val denom = virtualX - ballPos.x
+                    if (abs(denom) > 1f) {
+                        val t = (config.left - ballPos.x) / denom
+                        if (t in 0.001f..0.999f) {
+                            val hitY = ballPos.y + t * (pocketPos.y - ballPos.y)
+                            if (hitY in config.top..config.bottom) {
+                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 4f else 8f
+                                val diamondVal = ((hitY - config.top) / config.height) * segments
+                                result.add(
+                                    BankTrajectory(
+                                        start = ballPos,
+                                        cushionHit1 = PointF2D(config.left, hitY),
+                                        targetPocket = pocketPos,
+                                        label = String.format("Kr %.1f", diamondVal),
+                                        pocketType = pocketType,
+                                        isHalfDiamond = false
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Pantul via Right Rail
+                if (pocketPos.x < config.right - 5f) {
+                    val virtualX = 2f * config.right - pocketPos.x
+                    val denom = virtualX - ballPos.x
+                    if (abs(denom) > 1f) {
+                        val t = (config.right - ballPos.x) / denom
+                        if (t in 0.001f..0.999f) {
+                            val hitY = ballPos.y + t * (pocketPos.y - ballPos.y)
+                            if (hitY in config.top..config.bottom) {
+                                val segments = if (config.orientation == TableOrientation.LANDSCAPE) 4f else 8f
+                                val diamondVal = ((hitY - config.top) / config.height) * segments
+                                result.add(
+                                    BankTrajectory(
+                                        start = ballPos,
+                                        cushionHit1 = PointF2D(config.right, hitY),
+                                        targetPocket = pocketPos,
+                                        label = String.format("Kn %.1f", diamondVal),
+                                        pocketType = pocketType,
+                                        isHalfDiamond = false
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
     private fun addRailTrajectories(
         trajectories: MutableList<BankTrajectory>,
         config: TableConfig,

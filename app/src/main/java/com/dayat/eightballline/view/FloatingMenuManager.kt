@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import com.dayat.eightballline.R
 import com.dayat.eightballline.model.BankDirection
 import com.dayat.eightballline.model.Pocket
+import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.util.PreferencesManager
 import kotlin.math.abs
 
@@ -29,7 +30,25 @@ class FloatingMenuManager(
     private val menuView: View = LayoutInflater.from(themedContext).inflate(R.layout.view_floating_menu, null)
     private lateinit var layoutParams: WindowManager.LayoutParams
 
+    // Aim Pin (Bidik Bola) window
+    private val aimPinView: View = LayoutInflater.from(themedContext).inflate(R.layout.view_aim_pin, null)
+    private lateinit var aimPinParams: WindowManager.LayoutParams
+    private var isAimPinActive = false
+
+    // Mini 1-Tap Quick Dock
     private val layoutBubble: View = menuView.findViewById(R.id.layoutBubble)
+    private val btnMiniMenu: View = menuView.findViewById(R.id.btnMiniMenu)
+    private val btnQuickTL: TextView = menuView.findViewById(R.id.btnQuickTL)
+    private val btnQuickML: TextView = menuView.findViewById(R.id.btnQuickML)
+    private val btnQuickTR: TextView = menuView.findViewById(R.id.btnQuickTR)
+    private val btnQuickAimPin: TextView = menuView.findViewById(R.id.btnQuickAimPin)
+    private val btnQuickAll: TextView = menuView.findViewById(R.id.btnQuickAll)
+    private val btnQuickBL: TextView = menuView.findViewById(R.id.btnQuickBL)
+    private val btnQuickMR: TextView = menuView.findViewById(R.id.btnQuickMR)
+    private val btnQuickBR: TextView = menuView.findViewById(R.id.btnQuickBR)
+    private val btnQuickDir: TextView = menuView.findViewById(R.id.btnQuickDir)
+
+    // Expanded Settings Panel
     private val layoutExpandedPanel: View = menuView.findViewById(R.id.layoutExpandedPanel)
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
@@ -62,6 +81,18 @@ class FloatingMenuManager(
     private val btnFloatColorBlack: View = menuView.findViewById(R.id.btnFloatColorBlack)
     private val btnCloseOverlay: Button = menuView.findViewById(R.id.btnCloseOverlay)
 
+    private val quickPocketButtons by lazy {
+        listOf(
+            btnQuickTL to Pocket.TOP_LEFT,
+            btnQuickML to Pocket.MIDDLE_LEFT,
+            btnQuickTR to Pocket.TOP_RIGHT,
+            btnQuickBL to Pocket.BOTTOM_LEFT,
+            btnQuickMR to Pocket.MIDDLE_RIGHT,
+            btnQuickBR to Pocket.BOTTOM_RIGHT,
+            btnQuickAll to Pocket.ALL
+        )
+    }
+
     private val pocketButtons by lazy {
         listOf(
             btnPocketTL to Pocket.TOP_LEFT,
@@ -93,12 +124,6 @@ class FloatingMenuManager(
         )
     }
 
-    private var initialX = 0
-    private var initialY = 0
-    private var initialTouchX = 0f
-    private var initialTouchY = 0f
-    private var isDragging = false
-
     fun attach() {
         val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -115,20 +140,45 @@ class FloatingMenuManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 50
-            y = 200
+            x = 24
+            y = 140
         }
 
+        val pinSizePx = (42 * themedContext.resources.displayMetrics.density).toInt()
+        aimPinParams = WindowManager.LayoutParams(
+            pinSizePx,
+            pinSizePx,
+            layoutType,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = 400
+            y = 400
+        }
+        aimPinView.visibility = View.GONE
+
+        setupMiniDock()
+        setupAimPinDrag()
         setupListeners()
         setupPocketGrid()
         setupDirectionGrid()
         setupColorPicker()
+
         windowManager.addView(menuView, layoutParams)
+        windowManager.addView(aimPinView, aimPinParams)
     }
 
-    private fun setupListeners() {
-        // Dragging & clicking bubble
-        layoutBubble.setOnTouchListener { _, event ->
+    private fun attachDragOrClick(target: View, onClick: () -> Unit) {
+        var initialX = 0
+        var initialY = 0
+        var initialTouchX = 0f
+        var initialTouchY = 0f
+        var isDragging = false
+
+        target.setOnTouchListener { _, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = layoutParams.x
@@ -151,14 +201,114 @@ class FloatingMenuManager(
                 }
                 MotionEvent.ACTION_UP -> {
                     if (!isDragging) {
-                        expandMenu()
+                        onClick()
                     }
                     true
                 }
                 else -> false
             }
         }
+    }
 
+    private fun setupMiniDock() {
+        attachDragOrClick(btnMiniMenu) {
+            expandMenu()
+        }
+
+        for ((btn, pocket) in quickPocketButtons) {
+            attachDragOrClick(btn) {
+                selectPocket(pocket)
+            }
+        }
+
+        attachDragOrClick(btnQuickAimPin) {
+            toggleAimPin()
+        }
+
+        attachDragOrClick(btnQuickDir) {
+            val dirs = BankDirection.values()
+            val nextIdx = (dirs.indexOf(overlayView.config.bankDirection) + 1) % dirs.size
+            selectDirection(dirs[nextIdx])
+        }
+    }
+
+    private fun setupAimPinDrag() {
+        var initialX = 0
+        var initialY = 0
+        var initialTouchX = 0f
+        var initialTouchY = 0f
+
+        aimPinView.setOnTouchListener { _, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    initialX = aimPinParams.x
+                    initialY = aimPinParams.y
+                    initialTouchX = event.rawX
+                    initialTouchY = event.rawY
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = (event.rawX - initialTouchX).toInt()
+                    val dy = (event.rawY - initialTouchY).toInt()
+                    aimPinParams.x = initialX + dx
+                    aimPinParams.y = initialY + dy
+                    safeUpdateAimPinLayout()
+                    syncAimTargetFromPin()
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    aimPinView.post { syncAimTargetFromPin() }
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun toggleAimPin() {
+        isAimPinActive = !isAimPinActive
+        if (isAimPinActive) {
+            val pinW = aimPinParams.width
+            val pinH = aimPinParams.height
+            val centerX = (overlayView.config.left + overlayView.config.right) / 2f
+            val centerY = (overlayView.config.top + overlayView.config.bottom) / 2f
+            aimPinParams.x = (centerX - pinW / 2f).toInt()
+            aimPinParams.y = (centerY - pinH / 2f).toInt()
+            aimPinView.visibility = View.VISIBLE
+            safeUpdateAimPinLayout()
+            overlayView.aimTarget = PointF2D(centerX, centerY)
+            aimPinView.post { syncAimTargetFromPin() }
+        } else {
+            aimPinView.visibility = View.GONE
+            overlayView.aimTarget = null
+        }
+        updateQuickAimPinStyle()
+    }
+
+    private fun syncAimTargetFromPin() {
+        if (!isAimPinActive || !aimPinView.isAttachedToWindow) return
+        val pinLoc = IntArray(2)
+        val overlayLoc = IntArray(2)
+        aimPinView.getLocationOnScreen(pinLoc)
+        overlayView.getLocationOnScreen(overlayLoc)
+
+        val cx = (pinLoc[0] - overlayLoc[0]) + (aimPinView.width.takeIf { it > 0 } ?: aimPinParams.width) / 2f
+        val cy = (pinLoc[1] - overlayLoc[1]) + (aimPinView.height.takeIf { it > 0 } ?: aimPinParams.height) / 2f
+        overlayView.aimTarget = PointF2D(cx, cy)
+    }
+
+    private fun updateQuickAimPinStyle() {
+        val density = themedContext.resources.displayMetrics.density
+        btnQuickAimPin.setTextColor(if (isAimPinActive) 0xFF000000.toInt() else 0xFF00E5FF.toInt())
+        btnQuickAimPin.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 5f * density
+            setColor(if (isAimPinActive) 0xFF00E5FF.toInt() else 0xFF111827.toInt())
+            setStroke((1.2f * density).toInt(), 0xFF00E5FF.toInt())
+        }
+    }
+
+    private fun setupListeners() {
         btnMinimize.setOnClickListener {
             collapseMenu()
         }
@@ -254,16 +404,22 @@ class FloatingMenuManager(
         btnCloseOverlay.setOnClickListener {
             onStopServiceRequested()
         }
+
+        updateQuickAimPinStyle()
+    }
+
+    private fun selectPocket(pocket: Pocket) {
+        overlayView.config.activePocket = pocket
+        overlayView.invalidate()
+        prefs.saveConfig(overlayView.config)
+        updatePocketHighlights()
     }
 
     private fun setupPocketGrid() {
         updatePocketHighlights()
         for ((btn, pocket) in pocketButtons) {
             btn.setOnClickListener {
-                overlayView.config.activePocket = pocket
-                overlayView.invalidate()
-                prefs.saveConfig(overlayView.config)
-                updatePocketHighlights()
+                selectPocket(pocket)
             }
         }
     }
@@ -273,7 +429,8 @@ class FloatingMenuManager(
         val active = overlayView.config.activePocket
         val usePocketColors = overlayView.config.colorByPocket
 
-        for ((btn, pocket) in pocketButtons) {
+        val allButtons = pocketButtons + quickPocketButtons
+        for ((btn, pocket) in allButtons) {
             val isSelected = pocket == active
             val pocketColor = TableOverlayView.getPocketColor(pocket)
             val strokeColor = if (isSelected) {
@@ -290,21 +447,25 @@ class FloatingMenuManager(
             )
             btn.background = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
-                cornerRadius = 6f * density
+                cornerRadius = 5f * density
                 setColor(bgColor)
                 setStroke(((if (isSelected) 1.8f else 0.8f) * density).toInt(), strokeColor)
             }
         }
     }
 
+    private fun selectDirection(direction: BankDirection) {
+        overlayView.config.bankDirection = direction
+        overlayView.invalidate()
+        prefs.saveConfig(overlayView.config)
+        updateDirectionHighlights()
+    }
+
     private fun setupDirectionGrid() {
         updateDirectionHighlights()
         for ((btn, direction) in directionButtons) {
             btn.setOnClickListener {
-                overlayView.config.bankDirection = direction
-                overlayView.invalidate()
-                prefs.saveConfig(overlayView.config)
-                updateDirectionHighlights()
+                selectDirection(direction)
             }
         }
     }
@@ -325,6 +486,22 @@ class FloatingMenuManager(
                     if (isSelected) 0xFF00E5FF.toInt() else 0x33FFFFFF
                 )
             }
+        }
+
+        btnQuickDir.text = when (active) {
+            BankDirection.ALL -> "✛"
+            BankDirection.TOP_BOTTOM -> "↕"
+            BankDirection.LEFT_RIGHT -> "↔"
+        }
+        btnQuickDir.setTextColor(if (active == BankDirection.ALL) 0xFFE2E8F0.toInt() else 0xFF00E5FF.toInt())
+        btnQuickDir.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = 5f * density
+            setColor(if (active == BankDirection.ALL) 0xFF111827.toInt() else 0xFF1F2937.toInt())
+            setStroke(
+                (1.0f * density).toInt(),
+                if (active == BankDirection.ALL) 0x33FFFFFF else 0xFF00E5FF.toInt()
+            )
         }
     }
 
@@ -395,10 +572,27 @@ class FloatingMenuManager(
         }
     }
 
+    private fun safeUpdateAimPinLayout() {
+        try {
+            if (aimPinView.isAttachedToWindow) {
+                windowManager.updateViewLayout(aimPinView, aimPinParams)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
     fun detach() {
         try {
             if (menuView.isAttachedToWindow) {
                 windowManager.removeView(menuView)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        try {
+            if (aimPinView.isAttachedToWindow) {
+                windowManager.removeView(aimPinView)
             }
         } catch (e: Exception) {
             e.printStackTrace()
