@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.*
 import android.view.MotionEvent
 import android.view.View
-import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.util.DiamondSystemCalculator
@@ -78,22 +77,20 @@ class TableOverlayView(context: Context) : View(context) {
         setShadowLayer(6f, 2f, 2f, 0xFF000000.toInt())
     }
 
-    // Dragging state for calibration
-    private var activeCorner = -1 // 0: Top-Left, 1: Top-Right, 2: Bottom-Right, 3: Bottom-Left
-    private val handleRadius = 45f
-
-    init {
-        updatePaints()
+    private val centerHandlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = 0xFF00E5FF.toInt() // Cyan center
     }
 
-    private fun updatePaints() {
-        linePaint.color = config.lineColor
-        linePaint.alpha = config.opacity
-        linePaint.strokeWidth = config.lineWidth
+    private val centerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        textSize = 20f
+        color = 0xFF000000.toInt()
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
 
     // Dragging state for calibration
-    private var activeHandle = -1 // 0-3: Corners (TL, TR, BR, BL), 4: Center pan, 5: Top, 6: Right, 7: Bottom, 8: Left
+    private var activeHandle = -1 // 0-3: Corners (TL, TR, BR, BL), 4: Center pan
     private var lastTouchX = 0f
     private var lastTouchY = 0f
     private val handleRadius = 40f
@@ -187,19 +184,9 @@ class TableOverlayView(context: Context) : View(context) {
                 canvas.drawCircle(pt.x, pt.y, handleRadius, handleBorderPaint)
             }
 
-            // Handle Geser Tengah (Cyan/Hijau)
-            val centerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.FILL
-                color = 0xFF00E5FF.toInt()
-            }
-            canvas.drawCircle(midX, midY, centerHandleRadius, centerPaint)
+            // Handle Geser Tengah (Cyan)
+            canvas.drawCircle(midX, midY, centerHandleRadius, centerHandlePaint)
             canvas.drawCircle(midX, midY, centerHandleRadius, handleBorderPaint)
-            val centerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                textSize = 20f
-                color = 0xFF000000.toInt()
-                textAlign = Paint.Align.CENTER
-                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            }
             canvas.drawText("GESER", midX, midY + 7f, centerTextPaint)
 
             // Panduan di layar
