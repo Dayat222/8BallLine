@@ -35,8 +35,8 @@ class FloatingMenuManager(
     private lateinit var aimPinParams: WindowManager.LayoutParams
     private var isAimPinActive = true
 
-    // Mini 1-Tap Quick Dock
-    private val layoutBubble: View = menuView.findViewById(R.id.layoutBubble)
+    // Mini 1-Tap Quick Dock (Slim Capsule)
+    private val layoutBubble: LinearLayout = menuView.findViewById(R.id.layoutBubble)
     private val btnMiniMenu: View = menuView.findViewById(R.id.btnMiniMenu)
     private val btnQuickTL: TextView = menuView.findViewById(R.id.btnQuickTL)
     private val btnQuickML: TextView = menuView.findViewById(R.id.btnQuickML)
@@ -47,6 +47,8 @@ class FloatingMenuManager(
     private val btnQuickMR: TextView = menuView.findViewById(R.id.btnQuickMR)
     private val btnQuickBR: TextView = menuView.findViewById(R.id.btnQuickBR)
     private val btnQuickDir: TextView = menuView.findViewById(R.id.btnQuickDir)
+    private val btnQuickRotate: TextView = menuView.findViewById(R.id.btnQuickRotate)
+    private var isDockVertical = false
 
     // Expanded Settings Panel
     private val layoutExpandedPanel: View = menuView.findViewById(R.id.layoutExpandedPanel)
@@ -139,11 +141,11 @@ class FloatingMenuManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
-            x = 24
-            y = 140
+            x = 120
+            y = 12
         }
 
-        val pinSizePx = (42 * themedContext.resources.displayMetrics.density).toInt()
+        val pinSizePx = (40 * themedContext.resources.displayMetrics.density).toInt()
         val initCenter = getDefaultAimCenter()
         aimPinParams = WindowManager.LayoutParams(
             pinSizePx,
@@ -266,6 +268,12 @@ class FloatingMenuManager(
             val dirs = BankDirection.values()
             val nextIdx = (dirs.indexOf(overlayView.config.bankDirection) + 1) % dirs.size
             selectDirection(dirs[nextIdx])
+        }
+
+        attachDragOrClick(btnQuickRotate) {
+            isDockVertical = !isDockVertical
+            layoutBubble.orientation = if (isDockVertical) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+            safeUpdateViewLayout()
         }
     }
 

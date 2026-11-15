@@ -228,10 +228,6 @@ object DiamondSystemCalculator {
             if (activeFilter != Pocket.ALL && activeFilter != pocketType) {
                 continue
             }
-            val isMiddlePocket = pocketType == Pocket.MIDDLE_LEFT || pocketType == Pocket.MIDDLE_RIGHT
-            if (activeFilter == Pocket.ALL && isMiddlePocket) {
-                continue
-            }
 
             if (includeTopBottom) {
                 // Pantul via Top Rail
