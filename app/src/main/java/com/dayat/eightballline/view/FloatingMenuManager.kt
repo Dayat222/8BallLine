@@ -245,12 +245,22 @@ class FloatingMenuManager(
     private fun expandMenu() {
         layoutBubble.visibility = View.GONE
         layoutExpandedPanel.visibility = View.VISIBLE
+        val density = themedContext.resources.displayMetrics.density
+        val panelWidthPx = (220 * density).toInt()
+        val screenH = overlayView.height.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
+        val maxPanelHeight = (screenH * 0.80f).toInt()
+        layoutExpandedPanel.measure(
+            View.MeasureSpec.makeMeasureSpec(panelWidthPx, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(maxPanelHeight, View.MeasureSpec.AT_MOST)
+        )
+        layoutParams.height = layoutExpandedPanel.measuredHeight.coerceAtMost(maxPanelHeight)
         safeUpdateViewLayout()
     }
 
     private fun collapseMenu() {
         layoutExpandedPanel.visibility = View.GONE
         layoutBubble.visibility = View.VISIBLE
+        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
         safeUpdateViewLayout()
     }
 
