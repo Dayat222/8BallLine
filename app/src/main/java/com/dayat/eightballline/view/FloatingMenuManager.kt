@@ -5,15 +5,16 @@ import android.graphics.PixelFormat
 import android.os.Build
 import android.view.*
 import android.widget.*
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import com.dayat.eightballline.R
 import com.dayat.eightballline.model.Pocket
-import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.util.PreferencesManager
 import kotlin.math.abs
 
 class FloatingMenuManager(
-    private val context: Context,
+    context: Context,
     private val windowManager: WindowManager,
     private val overlayView: TableOverlayView,
     private val prefs: PreferencesManager,
@@ -21,7 +22,8 @@ class FloatingMenuManager(
     private val onCalibrationModeChanged: (Boolean) -> Unit
 ) {
 
-    private val menuView: View = LayoutInflater.from(context).inflate(R.layout.view_floating_menu, null)
+    private val themedContext: Context = ContextThemeWrapper(context, R.style.Theme_EightBallLine)
+    private val menuView: View = LayoutInflater.from(themedContext).inflate(R.layout.view_floating_menu, null)
     private lateinit var layoutParams: WindowManager.LayoutParams
 
     private val layoutBubble: View = menuView.findViewById(R.id.layoutBubble)
@@ -29,10 +31,15 @@ class FloatingMenuManager(
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
     private val btnToggleCalibration: Button = menuView.findViewById(R.id.btnToggleCalibration)
-    private val spinnerPockets: Spinner = menuView.findViewById(R.id.spinnerPockets)
+    private val btnPrevPocket: TextView = menuView.findViewById(R.id.btnPrevPocket)
+    private val tvSelectedPocket: TextView = menuView.findViewById(R.id.tvSelectedPocket)
+    private val btnNextPocket: TextView = menuView.findViewById(R.id.btnNextPocket)
     private val tvOpacityLabel: TextView = menuView.findViewById(R.id.tvOpacityLabel)
     private val seekBarOpacity: SeekBar = menuView.findViewById(R.id.seekBarOpacity)
     private val btnCloseOverlay: Button = menuView.findViewById(R.id.btnCloseOverlay)
+
+    private val pockets = Pocket.values()
+    private var currentPocketIndex = pockets.indexOf(overlayView.config.activePocket).coerceAtLeast(0)
 
     private var initialX = 0
     private var initialY = 0
@@ -61,14 +68,14 @@ class FloatingMenuManager(
         }
 
         setupListeners()
-        setupSpinner()
+        setupPocketSelector()
         windowManager.addView(menuView, layoutParams)
     }
 
     private fun setupListeners() {
         // Dragging & clicking bubble
         layoutBubble.setOnTouchListener { _, event ->
-            when (event.action) {
+            when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = layoutParams.x
                     initialY = layoutParams.y
@@ -84,7 +91,7 @@ class FloatingMenuManager(
                         isDragging = true
                         layoutParams.x = initialX + dx
                         layoutParams.y = initialY + dy
-                        windowManager.updateViewLayout(menuView, layoutParams)
+                        safeUpdateViewLayout()
                     }
                     true
                 }
@@ -118,10 +125,10 @@ class FloatingMenuManager(
 
             if (newMode) {
                 btnToggleCalibration.text = "Kunci Meja (Mode Main)"
-                btnToggleCalibration.setBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.accent_green))
+                btnToggleCalibration.setBackgroundColor(ContextCompat.getColor(themedContext, R.color.accent_green))
             } else {
                 btnToggleCalibration.text = "Masuk Mode Kalibrasi"
-                btnToggleCalibration.setBackgroundColor(androidx.core.content.ContextCompat.getColor(context, R.color.accent_red))
+                btnToggleCalibration.setBackgroundColor(ContextCompat.getColor(themedContext, R.color.accent_red))
                 prefs.saveConfig(overlayView.config)
             }
         }
@@ -148,40 +155,60 @@ class FloatingMenuManager(
         }
     }
 
-    private fun setupSpinner() {
-        val pocketList = Pocket.values().map { it.displayName }
-        val adapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item, pocketList)
-        spinnerPockets.adapter = adapter
+    private fun setupPocketSelector() {
+        tvSelectedPocket.text = pockets[currentPocketIndex].displayName
 
-        val currentIdx = Pocket.values().indexOf(overlayView.config.activePocket)
-        if (currentIdx >= 0) {
-            spinnerPockets.setSelection(currentIdx)
+        btnPrevPocket.setOnClickListener {
+            currentPocketIndex = (currentPocketIndex - 1 + pockets.size) % pockets.size
+            applyPocketSelection()
         }
 
-        spinnerPockets.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selectedPocket = Pocket.values()[position]
-                overlayView.config.activePocket = selectedPocket
-                overlayView.invalidate()
-                prefs.saveConfig(overlayView.config)
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        btnNextPocket.setOnClickListener {
+            currentPocketIndex = (currentPocketIndex + 1) % pockets.size
+            applyPocketSelection()
         }
+
+        tvSelectedPocket.setOnClickListener {
+            currentPocketIndex = (currentPocketIndex + 1) % pockets.size
+            applyPocketSelection()
+        }
+    }
+
+    private fun applyPocketSelection() {
+        val selectedPocket = pockets[currentPocketIndex]
+        tvSelectedPocket.text = selectedPocket.displayName
+        overlayView.config.activePocket = selectedPocket
+        overlayView.invalidate()
+        prefs.saveConfig(overlayView.config)
     }
 
     private fun expandMenu() {
         layoutBubble.visibility = View.GONE
         layoutExpandedPanel.visibility = View.VISIBLE
+        safeUpdateViewLayout()
     }
 
     private fun collapseMenu() {
         layoutExpandedPanel.visibility = View.GONE
         layoutBubble.visibility = View.VISIBLE
+        safeUpdateViewLayout()
+    }
+
+    private fun safeUpdateViewLayout() {
+        try {
+            if (menuView.isAttachedToWindow) {
+                windowManager.updateViewLayout(menuView, layoutParams)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     fun detach() {
         try {
-            windowManager.removeView(menuView)
+            if (menuView.isAttachedToWindow) {
+                windowManager.removeView(menuView)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }
