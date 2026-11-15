@@ -160,14 +160,14 @@ class MainActivity : AppCompatActivity() {
             startService(intent)
         }
         updateServiceStatus()
-        Toast.makeText(this, "Overlay 8BallLine Aktif! Buka game 8 Ball Pool.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Overlay GridRuler Aktif!", Toast.LENGTH_LONG).show()
     }
 
     private fun stopOverlayService() {
         val intent = Intent(this, OverlayService::class.java)
         stopService(intent)
         updateServiceStatus()
-        Toast.makeText(this, "Overlay 8BallLine Dinonaktifkan", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, "Overlay GridRuler Dinonaktifkan", Toast.LENGTH_SHORT).show()
     }
 
     private fun updateServiceStatus() {

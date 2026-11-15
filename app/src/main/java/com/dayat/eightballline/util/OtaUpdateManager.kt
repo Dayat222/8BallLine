@@ -50,7 +50,7 @@ class OtaUpdateManager(private val context: Context) {
                     connectTimeout = CONNECT_TIMEOUT_MS
                     readTimeout = READ_TIMEOUT_MS
                     setRequestProperty("Accept", "application/vnd.github+json")
-                    setRequestProperty("User-Agent", "8BallLine-OTA/${BuildConfig.VERSION_NAME}")
+                    setRequestProperty("User-Agent", "GridRuler-OTA/${BuildConfig.VERSION_NAME}")
                 }
 
                 val responseCode = conn.responseCode
@@ -213,7 +213,7 @@ class OtaUpdateManager(private val context: Context) {
                 instanceFollowRedirects = true
                 connectTimeout = CONNECT_TIMEOUT_MS
                 readTimeout = 30_000
-                setRequestProperty("User-Agent", "8BallLine-OTA/${BuildConfig.VERSION_NAME}")
+                setRequestProperty("User-Agent", "GridRuler-OTA/${BuildConfig.VERSION_NAME}")
             }
             val code = conn.responseCode
             if (code in 300..399) {

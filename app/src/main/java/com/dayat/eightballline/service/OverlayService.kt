@@ -25,9 +25,9 @@ class OverlayService : Service() {
     private var floatingMenuManager: FloatingMenuManager? = null
 
     companion object {
-        const val CHANNEL_ID = "channel_8ball_line_overlay"
+        const val CHANNEL_ID = "channel_grid_ruler_overlay"
         const val NOTIFICATION_ID = 8888
-        const val ACTION_STOP_SERVICE = "com.dayat.eightballline.STOP_SERVICE"
+        const val ACTION_STOP_SERVICE = "com.dayat.screenruler.STOP_SERVICE"
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -46,10 +46,10 @@ class OverlayService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "8BallLine Overlay Service",
+                "GridRuler Overlay Service",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Notifikasi status overlay garis pantul 8 Ball Pool"
+                description = "Status layanan penggaris layar mengambang"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
@@ -62,8 +62,8 @@ class OverlayService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("8BallLine Aktif")
-            .setContentText("Garis pantul berjalan di atas game 8 Ball Pool")
+            .setContentTitle("GridRuler Aktif")
+            .setContentText("Penggaris proyeksi sudut sedang berjalan")
             .setSmallIcon(R.drawable.ic_ball8)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

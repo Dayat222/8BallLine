@@ -8,11 +8,11 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.dayat.eightballline"
+        applicationId = "com.dayat.screenruler"
         minSdk = 24
         targetSdk = 34
-        versionCode = 17
-        versionName = "1.0.16"
+        versionCode = 18
+        versionName = "1.0.17"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -31,7 +31,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             val hasReleaseKeystore = !System.getenv("RELEASE_KEYSTORE_PATH").isNullOrBlank()
             if (hasReleaseKeystore) {
                 signingConfig = signingConfigs.getByName("release")

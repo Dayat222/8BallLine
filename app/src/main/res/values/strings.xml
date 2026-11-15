@@ -1,24 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">8BallLine</string>
-    <string name="app_subtitle">Digital Guideline &amp; Diamond System Overlay</string>
+    <string name="app_name">GridRuler</string>
+    <string name="app_subtitle">On-Screen Geometric Alignment &amp; Ruler Overlay</string>
     <string name="status_stopped">Overlay Tidak Aktif</string>
     <string name="status_running">Overlay Aktif &amp; Berjalan</string>
-    <string name="btn_start_overlay">Mulai Overlay Garis Pantul</string>
+    <string name="btn_start_overlay">Mulai Overlay Penggaris</string>
     <string name="btn_stop_overlay">Hentikan Overlay</string>
     <string name="grant_permission">Beri Izin Tampilkan di Atas Aplikasi Lain</string>
-    <string name="permission_required_desc">Aplikasi membutuhkan izin \'Display over other apps\' agar garis pantul dapat tampil mengambang di atas game 8 Ball Pool.</string>
-    <string name="table_settings_title">Pengaturan Meja &amp; Tampilan</string>
-    <string name="orientation_label">Orientasi Meja</string>
-    <string name="line_color_label">Warna Garis Pantul</string>
+    <string name="permission_required_desc">Aplikasi membutuhkan izin \'Display over other apps\' agar garis penggaris dapat tampil mengambang di atas layar.</string>
+    <string name="table_settings_title">Pengaturan Area &amp; Tampilan</string>
+    <string name="orientation_label">Orientasi Area</string>
+    <string name="line_color_label">Warna Garis</string>
     <string name="line_opacity_label">Transparansi Garis</string>
-    <string name="reset_calibration">Reset Kalibrasi Ukuran Meja</string>
+    <string name="reset_calibration">Reset Kalibrasi Ukuran Area</string>
     <string name="how_to_use_title">Cara Menggunakan</string>
     <string name="step_1">1. Buka izin overlay dan tekan tombol \'Mulai Overlay\'.</string>
-    <string name="step_2">2. Buka game 8 Ball Pool di ponsel Anda.</string>
-    <string name="step_3">3. Tekan ikon melayang 8BallLine, pilih \'Mode Kalibrasi\' dan sesuaikan 4 titik sudut merah agar tepat di tepi bantalan (cushion) meja.</string>
-    <string name="step_4">4. Setelah pas, tekan \'Kunci Meja\' untuk bermain tanpa hambatan sentuhan.</string>
-    <string name="step_5">5. Sejajarkan stik dengan garis Titik 1 s/d 6 untuk tembakan pantulan (bank shot) presisi.</string>
+    <string name="step_2">2. Buka aplikasi atau area kerja di ponsel Anda.</string>
+    <string name="step_3">3. Ketuk ikon kontrol pada bar melayang, pilih \'Kalibrasi\', lalu sesuaikan 4 titik sudut merah dengan batas area.</string>
+    <string name="step_4">4. Setelah pas, tekan \'Kunci Meja\' untuk kembali ke mode tembus sentuhan.</string>
+    <string name="step_5">5. Geser pin bidik ke titik objek untuk melihat proyeksi sudut pantulan 0, 1, atau 2x secara akurat.</string>
     <string name="ota_title">Pembaruan Aplikasi (OTA)</string>
     <string name="ota_check_btn">Cek Update Terbaru</string>
     <string name="ota_checking">Memeriksa pembaruan dari GitHub...</string>

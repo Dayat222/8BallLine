@@ -10,7 +10,7 @@ import com.dayat.eightballline.model.TableOrientation
 class PreferencesManager(context: Context) {
 
     private val prefs: SharedPreferences =
-        context.getSharedPreferences("eight_ball_line_prefs", Context.MODE_PRIVATE)
+        context.getSharedPreferences("grid_ruler_prefs", Context.MODE_PRIVATE)
 
     fun hasSavedCalibration(): Boolean {
         return prefs.contains("table_left") &&
