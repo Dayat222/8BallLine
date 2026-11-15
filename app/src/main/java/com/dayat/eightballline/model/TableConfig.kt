@@ -31,9 +31,10 @@ data class TableConfig(
     var orientation: TableOrientation = TableOrientation.LANDSCAPE,
     var activePocket: Pocket = Pocket.ALL,
     var bankDirection: BankDirection = BankDirection.ALL,
+    var colorByPocket: Boolean = true,
     var lineColor: Int = 0xFF00E5FF.toInt(), // Cyan neon
-    var lineWidth: Float = 1.6f,
-    var opacity: Int = 185, // 0 - 255
+    var lineWidth: Float = 1.5f,
+    var opacity: Int = 190, // 0 - 255
     var showDiamonds: Boolean = true,
     var showHalfDiamonds: Boolean = true,
     var showBankShotLines: Boolean = true

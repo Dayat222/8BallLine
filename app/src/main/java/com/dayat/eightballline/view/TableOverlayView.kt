@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.view.MotionEvent
 import android.view.View
+import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.util.DiamondSystemCalculator
@@ -35,6 +36,7 @@ class TableOverlayView(context: Context) : View(context) {
     private val halfLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
+        pathEffect = DashPathEffect(floatArrayOf(10f, 8f), 0f)
     }
 
     private val gridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -121,21 +123,33 @@ class TableOverlayView(context: Context) : View(context) {
         invalidate()
     }
 
+    companion object {
+        fun getPocketColor(pocket: Pocket): Int = when (pocket) {
+            Pocket.TOP_LEFT -> 0xFF00E5FF.toInt()     // Cyan
+            Pocket.TOP_RIGHT -> 0xFFF59E0B.toInt()    // Kuning Gold
+            Pocket.BOTTOM_LEFT -> 0xFF10B981.toInt()  // Hijau Emerald
+            Pocket.BOTTOM_RIGHT -> 0xFFFB7185.toInt() // Merah Rose
+            Pocket.MIDDLE_LEFT -> 0xFFA78BFA.toInt()  // Ungu Neon
+            Pocket.MIDDLE_RIGHT -> 0xFF38BDF8.toInt() // Biru Langit
+            Pocket.ALL -> 0xFF00E5FF.toInt()
+        }
+    }
+
     private fun updatePaints() {
         linePaint.color = config.lineColor
         linePaint.alpha = config.opacity
         linePaint.strokeWidth = config.lineWidth
 
         halfLinePaint.color = config.lineColor
-        halfLinePaint.alpha = (config.opacity * 0.65f).toInt().coerceIn(20, 255)
-        halfLinePaint.strokeWidth = (config.lineWidth * 0.72f).coerceAtLeast(1.0f)
+        halfLinePaint.alpha = (config.opacity * 0.45f).toInt().coerceIn(20, 255)
+        halfLinePaint.strokeWidth = (config.lineWidth * 0.68f).coerceAtLeast(1.0f)
 
-        gridLinePaint.color = config.lineColor
-        gridLinePaint.alpha = (config.opacity * 0.35f).toInt().coerceIn(20, 130)
+        gridLinePaint.color = if (config.colorByPocket) 0xFFFFFFFF.toInt() else config.lineColor
+        gridLinePaint.alpha = (config.opacity * 0.18f).toInt().coerceIn(12, 70)
         gridLinePaint.strokeWidth = 1f
 
-        halfDiamondPaint.color = config.lineColor
-        halfDiamondPaint.alpha = (config.opacity * 0.85f).toInt().coerceIn(40, 255)
+        halfDiamondPaint.color = if (config.colorByPocket) 0xFFFFFFFF.toInt() else config.lineColor
+        halfDiamondPaint.alpha = (config.opacity * 0.75f).toInt().coerceIn(40, 255)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -171,17 +185,24 @@ class TableOverlayView(context: Context) : View(context) {
             }
         }
 
-        // 2. Gambar Lubang (6 Pockets)
+        // 2. Gambar Lubang (6 Pockets) dengan warna penanda
         val pockets = DiamondSystemCalculator.getPocketPositions(config)
-        for ((_, pos) in pockets) {
+        for ((pocketType, pos) in pockets) {
+            pocketPaint.color = if (config.colorByPocket) getPocketColor(pocketType) else 0xFFFFD700.toInt()
             canvas.drawCircle(pos.x, pos.y, 22f, pocketPaint)
         }
 
         // 3. Gambar Garis Pantulan (Bank Shot Trajectories)
         if (config.showBankShotLines) {
             val trajectories = DiamondSystemCalculator.calculateTrajectories(config)
+            val mainAlpha = config.opacity
+            val halfAlpha = (config.opacity * 0.45f).toInt().coerceIn(20, 255)
             for (traj in trajectories) {
                 val activePaint = if (traj.isHalfDiamond) halfLinePaint else linePaint
+                if (config.colorByPocket) {
+                    activePaint.color = getPocketColor(traj.pocketType)
+                    activePaint.alpha = if (traj.isHalfDiamond) halfAlpha else mainAlpha
+                }
                 // Sinar datang (incoming ray)
                 canvas.drawLine(
                     traj.start.x, traj.start.y,

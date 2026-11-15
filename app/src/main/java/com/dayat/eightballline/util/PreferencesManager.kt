@@ -29,6 +29,7 @@ class PreferencesManager(context: Context) {
             putString("table_orientation", config.orientation.name)
             putInt("active_pocket", config.activePocket.id)
             putInt("bank_direction", config.bankDirection.id)
+            putBoolean("color_by_pocket", config.colorByPocket)
             putInt("line_color", config.lineColor)
             putFloat("line_width_v2", config.lineWidth)
             putInt("line_opacity", config.opacity)
@@ -98,9 +99,10 @@ class PreferencesManager(context: Context) {
         val directionId = prefs.getInt("bank_direction", BankDirection.ALL.id)
         val bankDirection = BankDirection.values().firstOrNull { it.id == directionId } ?: BankDirection.ALL
 
+        val colorByPocket = prefs.getBoolean("color_by_pocket", true)
         val lineColor = prefs.getInt("line_color", 0xFF00E5FF.toInt())
-        val lineWidth = prefs.getFloat("line_width_v2", 1.6f)
-        val opacity = prefs.getInt("line_opacity", 185)
+        val lineWidth = prefs.getFloat("line_width_v2", 1.5f)
+        val opacity = prefs.getInt("line_opacity", 190)
 
         val showDiamonds = prefs.getBoolean("show_diamonds", true)
         val showHalfDiamonds = prefs.getBoolean("show_half_lines_v2", true)
@@ -114,6 +116,7 @@ class PreferencesManager(context: Context) {
             orientation = orientation,
             activePocket = activePocket,
             bankDirection = bankDirection,
+            colorByPocket = colorByPocket,
             lineColor = lineColor,
             lineWidth = lineWidth,
             opacity = opacity,

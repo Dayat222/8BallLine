@@ -20,10 +20,10 @@
             android:src="@drawable/ic_ball8" />
     </LinearLayout>
 
-    <!-- Expanded Floating Control Panel (kompak) -->
+    <!-- Expanded Floating Control Panel (kompak + 1-tap quick filter) -->
     <ScrollView
         android:id="@+id/layoutExpandedPanel"
-        android:layout_width="220dp"
+        android:layout_width="224dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_floating_card"
         android:scrollbars="none"
@@ -60,7 +60,7 @@
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginVertical="6dp"
+                android:layout_marginVertical="5dp"
                 android:background="@color/surface_card_border" />
 
             <!-- Toggle Garis Pantul -->
@@ -87,7 +87,7 @@
                     android:scaleY="0.82" />
             </LinearLayout>
 
-            <!-- Toggle Titik Tengah (Half Diamonds) -->
+            <!-- Toggle Garis Titik Tengah (Half Diamonds) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -111,35 +111,135 @@
                     android:scaleY="0.82" />
             </LinearLayout>
 
-            <!-- Mode Kalibrasi vs Lock -->
-            <Button
-                android:id="@+id/btnToggleCalibration"
+            <!-- Toggle Warna per Lubang -->
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="32dp"
-                android:layout_marginTop="4dp"
-                android:backgroundTint="@color/accent_red"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:text="Mode Kalibrasi"
-                android:textAllCaps="false"
-                android:textColor="@color/text_primary"
-                android:textSize="11sp" />
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <!-- Reset Posisi Meja ke Tengah Layar -->
-            <Button
-                android:id="@+id/btnResetTableInOverlay"
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginTop="4dp"
-                android:backgroundTint="@color/surface_card"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:text="Reset Posisi Meja"
-                android:textAllCaps="false"
-                android:textColor="@color/neon_cyan"
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Warna per Lubang"
+                    android:textColor="@color/text_primary"
+                    android:textSize="11sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchColorByPocket"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:scaleX="0.82"
+                    android:scaleY="0.82" />
+            </LinearLayout>
+
+            <!-- 1-Tap Quick Pocket Filter Grid -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="Fokus Lubang (1-Tap):"
+                android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
-            <!-- Arah Pantulan Selector -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnPocketTL"
+                    android:layout_width="0dp"
+                    android:layout_height="26dp"
+                    android:layout_marginEnd="3dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="↖ K.Atas"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnPocketML"
+                    android:layout_width="0dp"
+                    android:layout_height="26dp"
+                    android:layout_marginEnd="3dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="● T.Atas"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnPocketTR"
+                    android:layout_width="0dp"
+                    android:layout_height="26dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="↗ Kn.Atas"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnPocketBL"
+                    android:layout_width="0dp"
+                    android:layout_height="26dp"
+                    android:layout_marginEnd="3dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="↙ K.Bawah"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnPocketMR"
+                    android:layout_width="0dp"
+                    android:layout_height="26dp"
+                    android:layout_marginEnd="3dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="● T.Bawah"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnPocketBR"
+                    android:layout_width="0dp"
+                    android:layout_height="26dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="↘ Kn.Bawah"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/btnPocketAll"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                android:layout_marginTop="3dp"
+                android:gravity="center"
+                android:text="✦ Semua Lubang"
+                android:textColor="@color/text_primary"
+                android:textSize="10sp"
+                android:textStyle="bold" />
+
+            <!-- 1-Tap Quick Direction Selector -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -150,96 +250,43 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/bg_floating_card"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="4dp">
-
-                <TextView
-                    android:id="@+id/btnPrevDirection"
-                    android:layout_width="28dp"
-                    android:layout_height="26dp"
-                    android:gravity="center"
-                    android:text="◀"
-                    android:textColor="@color/neon_cyan"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvSelectedDirection"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:ellipsize="end"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:text="Semua Arah"
-                    android:textColor="@color/text_primary"
-                    android:textSize="10sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/btnNextDirection"
-                    android:layout_width="28dp"
-                    android:layout_height="26dp"
-                    android:gravity="center"
-                    android:text="▶"
-                    android:textColor="@color/neon_cyan"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <!-- Target Pocket Selector -->
-            <TextView
-                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="Target Lubang:"
-                android:textColor="@color/text_secondary"
-                android:textSize="10sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/bg_floating_card"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="4dp">
+                android:layout_marginTop="3dp"
+                android:orientation="horizontal">
 
                 <TextView
-                    android:id="@+id/btnPrevPocket"
-                    android:layout_width="28dp"
-                    android:layout_height="26dp"
-                    android:gravity="center"
-                    android:text="◀"
-                    android:textColor="@color/neon_cyan"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tvSelectedPocket"
+                    android:id="@+id/btnDirAll"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="3dp"
                     android:layout_weight="1"
-                    android:ellipsize="end"
                     android:gravity="center"
-                    android:maxLines="1"
-                    android:text="Semua Lubang"
+                    android:text="✛ Semua"
                     android:textColor="@color/text_primary"
-                    android:textSize="10sp"
+                    android:textSize="9.5sp"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/btnNextPocket"
-                    android:layout_width="28dp"
-                    android:layout_height="26dp"
+                    android:id="@+id/btnDirTB"
+                    android:layout_width="0dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="3dp"
+                    android:layout_weight="1"
                     android:gravity="center"
-                    android:text="▶"
-                    android:textColor="@color/neon_cyan"
-                    android:textSize="11sp"
+                    android:text="↕ Atas/Bwh"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnDirLR"
+                    android:layout_width="0dp"
+                    android:layout_height="24dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="↔ Kiri/Knn"
+                    android:textColor="@color/text_primary"
+                    android:textSize="9.5sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -249,7 +296,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Opasitas (80%)"
+                android:text="Opasitas (75%)"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -257,30 +304,30 @@
                 android:id="@+id/seekBarOpacity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="1dp"
                 android:max="255"
-                android:progress="210" />
+                android:progress="190" />
 
-            <!-- Warna Garis (In-Game Color Picker) -->
+            <!-- Warna Garis Tunggal (In-Game Color Picker) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="Warna Garis:"
+                android:layout_marginTop="4dp"
+                android:text="Pilih 1 Warna:"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="26dp"
-                android:layout_marginTop="3dp"
+                android:layout_height="24dp"
+                android:layout_marginTop="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
                 <View
                     android:id="@+id/btnFloatColorCyan"
                     android:layout_width="0dp"
-                    android:layout_height="22dp"
+                    android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
                     android:background="#00E5FF" />
@@ -288,7 +335,7 @@
                 <View
                     android:id="@+id/btnFloatColorGreen"
                     android:layout_width="0dp"
-                    android:layout_height="22dp"
+                    android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
                     android:background="#10B981" />
@@ -296,7 +343,7 @@
                 <View
                     android:id="@+id/btnFloatColorYellow"
                     android:layout_width="0dp"
-                    android:layout_height="22dp"
+                    android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
                     android:background="#F59E0B" />
@@ -304,7 +351,7 @@
                 <View
                     android:id="@+id/btnFloatColorRed"
                     android:layout_width="0dp"
-                    android:layout_height="22dp"
+                    android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
                     android:background="#EF4444" />
@@ -312,7 +359,7 @@
                 <View
                     android:id="@+id/btnFloatColorWhite"
                     android:layout_width="0dp"
-                    android:layout_height="22dp"
+                    android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
                     android:background="#FFFFFF" />
@@ -320,17 +367,52 @@
                 <View
                     android:id="@+id/btnFloatColorBlack"
                     android:layout_width="0dp"
-                    android:layout_height="22dp"
+                    android:layout_height="20dp"
                     android:layout_weight="1"
                     android:background="#111827" />
+            </LinearLayout>
+
+            <!-- Mode Kalibrasi & Reset -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnToggleCalibration"
+                    android:layout_width="0dp"
+                    android:layout_height="30dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1.2"
+                    android:backgroundTint="@color/accent_red"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Kalibrasi"
+                    android:textAllCaps="false"
+                    android:textColor="@color/text_primary"
+                    android:textSize="10sp" />
+
+                <Button
+                    android:id="@+id/btnResetTableInOverlay"
+                    android:layout_width="0dp"
+                    android:layout_height="30dp"
+                    android:layout_weight="1"
+                    android:backgroundTint="@color/surface_card"
+                    android:insetTop="0dp"
+                    android:insetBottom="0dp"
+                    android:text="Reset Meja"
+                    android:textAllCaps="false"
+                    android:textColor="@color/neon_cyan"
+                    android:textSize="10sp" />
             </LinearLayout>
 
             <!-- Close / Stop Service -->
             <Button
                 android:id="@+id/btnCloseOverlay"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_marginTop="6dp"
+                android:layout_height="28dp"
+                android:layout_marginTop="4dp"
                 android:backgroundTint="@color/surface_card_border"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"

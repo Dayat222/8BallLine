@@ -34,14 +34,22 @@ class FloatingMenuManager(
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
     private val switchHalfDiamonds: SwitchCompat = menuView.findViewById(R.id.switchHalfDiamonds)
+    private val switchColorByPocket: SwitchCompat = menuView.findViewById(R.id.switchColorByPocket)
+
+    private val btnPocketTL: TextView = menuView.findViewById(R.id.btnPocketTL)
+    private val btnPocketML: TextView = menuView.findViewById(R.id.btnPocketML)
+    private val btnPocketTR: TextView = menuView.findViewById(R.id.btnPocketTR)
+    private val btnPocketBL: TextView = menuView.findViewById(R.id.btnPocketBL)
+    private val btnPocketMR: TextView = menuView.findViewById(R.id.btnPocketMR)
+    private val btnPocketBR: TextView = menuView.findViewById(R.id.btnPocketBR)
+    private val btnPocketAll: TextView = menuView.findViewById(R.id.btnPocketAll)
+
+    private val btnDirAll: TextView = menuView.findViewById(R.id.btnDirAll)
+    private val btnDirTB: TextView = menuView.findViewById(R.id.btnDirTB)
+    private val btnDirLR: TextView = menuView.findViewById(R.id.btnDirLR)
+
     private val btnToggleCalibration: Button = menuView.findViewById(R.id.btnToggleCalibration)
     private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
-    private val btnPrevDirection: TextView = menuView.findViewById(R.id.btnPrevDirection)
-    private val tvSelectedDirection: TextView = menuView.findViewById(R.id.tvSelectedDirection)
-    private val btnNextDirection: TextView = menuView.findViewById(R.id.btnNextDirection)
-    private val btnPrevPocket: TextView = menuView.findViewById(R.id.btnPrevPocket)
-    private val tvSelectedPocket: TextView = menuView.findViewById(R.id.tvSelectedPocket)
-    private val btnNextPocket: TextView = menuView.findViewById(R.id.btnNextPocket)
     private val tvOpacityLabel: TextView = menuView.findViewById(R.id.tvOpacityLabel)
     private val seekBarOpacity: SeekBar = menuView.findViewById(R.id.seekBarOpacity)
     private val btnFloatColorCyan: View = menuView.findViewById(R.id.btnFloatColorCyan)
@@ -51,6 +59,26 @@ class FloatingMenuManager(
     private val btnFloatColorWhite: View = menuView.findViewById(R.id.btnFloatColorWhite)
     private val btnFloatColorBlack: View = menuView.findViewById(R.id.btnFloatColorBlack)
     private val btnCloseOverlay: Button = menuView.findViewById(R.id.btnCloseOverlay)
+
+    private val pocketButtons by lazy {
+        listOf(
+            btnPocketTL to Pocket.TOP_LEFT,
+            btnPocketML to Pocket.MIDDLE_LEFT,
+            btnPocketTR to Pocket.TOP_RIGHT,
+            btnPocketBL to Pocket.BOTTOM_LEFT,
+            btnPocketMR to Pocket.MIDDLE_RIGHT,
+            btnPocketBR to Pocket.BOTTOM_RIGHT,
+            btnPocketAll to Pocket.ALL
+        )
+    }
+
+    private val directionButtons by lazy {
+        listOf(
+            btnDirAll to BankDirection.ALL,
+            btnDirTB to BankDirection.TOP_BOTTOM,
+            btnDirLR to BankDirection.LEFT_RIGHT
+        )
+    }
 
     private val colorSwatches by lazy {
         listOf(
@@ -62,12 +90,6 @@ class FloatingMenuManager(
             btnFloatColorBlack to 0xFF111827.toInt()
         )
     }
-
-    private val pockets = Pocket.values()
-    private var currentPocketIndex = pockets.indexOf(overlayView.config.activePocket).coerceAtLeast(0)
-
-    private val directions = BankDirection.values()
-    private var currentDirectionIndex = directions.indexOf(overlayView.config.bankDirection).coerceAtLeast(0)
 
     private var initialX = 0
     private var initialY = 0
@@ -96,8 +118,8 @@ class FloatingMenuManager(
         }
 
         setupListeners()
-        setupDirectionSelector()
-        setupPocketSelector()
+        setupPocketGrid()
+        setupDirectionGrid()
         setupColorPicker()
         windowManager.addView(menuView, layoutParams)
     }
@@ -155,6 +177,16 @@ class FloatingMenuManager(
             prefs.saveConfig(overlayView.config)
         }
 
+        // Toggle Warna per Lubang (Auto Color-Coding)
+        switchColorByPocket.isChecked = overlayView.config.colorByPocket
+        switchColorByPocket.setOnCheckedChangeListener { _, isChecked ->
+            overlayView.config.colorByPocket = isChecked
+            overlayView.invalidate()
+            prefs.saveConfig(overlayView.config)
+            updateColorSwatchHighlights(overlayView.config.lineColor)
+            updatePocketHighlights()
+        }
+
         // Mode Kalibrasi vs Lock Meja
         btnToggleCalibration.setOnClickListener {
             val newMode = !overlayView.isCalibrationMode
@@ -162,16 +194,16 @@ class FloatingMenuManager(
             onCalibrationModeChanged(newMode)
 
             if (newMode) {
-                btnToggleCalibration.text = "Kunci Meja (Mode Main)"
+                btnToggleCalibration.text = "Kunci Meja"
                 btnToggleCalibration.setBackgroundColor(ContextCompat.getColor(themedContext, R.color.accent_green))
             } else {
-                btnToggleCalibration.text = "Masuk Mode Kalibrasi"
+                btnToggleCalibration.text = "Kalibrasi"
                 btnToggleCalibration.setBackgroundColor(ContextCompat.getColor(themedContext, R.color.accent_red))
                 prefs.saveConfig(overlayView.config)
             }
         }
 
-        // Reset posisi meja agar pas di layar aktif (mis. saat sudah di dalam game landscape)
+        // Reset posisi meja agar pas di layar aktif
         btnResetTableInOverlay.setOnClickListener {
             val w = overlayView.width.takeIf { it > 0 } ?: 1920
             val h = overlayView.height.takeIf { it > 0 } ?: 1080
@@ -185,13 +217,13 @@ class FloatingMenuManager(
 
         // Opacity Slider
         seekBarOpacity.progress = overlayView.config.opacity
-        tvOpacityLabel.text = "Opasitas Garis (${(overlayView.config.opacity * 100) / 255}%)"
+        tvOpacityLabel.text = "Opasitas (${(overlayView.config.opacity * 100) / 255}%)"
         seekBarOpacity.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val clamped = progress.coerceIn(30, 255)
                 overlayView.config.opacity = clamped
                 overlayView.invalidate()
-                tvOpacityLabel.text = "Opasitas Garis (${(clamped * 100) / 255}%)"
+                tvOpacityLabel.text = "Opasitas (${(clamped * 100) / 255}%)"
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
@@ -205,76 +237,98 @@ class FloatingMenuManager(
         }
     }
 
-    private fun setupDirectionSelector() {
-        tvSelectedDirection.text = directions[currentDirectionIndex].displayName
-
-        btnPrevDirection.setOnClickListener {
-            currentDirectionIndex = (currentDirectionIndex - 1 + directions.size) % directions.size
-            applyDirectionSelection()
-        }
-
-        btnNextDirection.setOnClickListener {
-            currentDirectionIndex = (currentDirectionIndex + 1) % directions.size
-            applyDirectionSelection()
-        }
-
-        tvSelectedDirection.setOnClickListener {
-            currentDirectionIndex = (currentDirectionIndex + 1) % directions.size
-            applyDirectionSelection()
+    private fun setupPocketGrid() {
+        updatePocketHighlights()
+        for ((btn, pocket) in pocketButtons) {
+            btn.setOnClickListener {
+                overlayView.config.activePocket = pocket
+                overlayView.invalidate()
+                prefs.saveConfig(overlayView.config)
+                updatePocketHighlights()
+            }
         }
     }
 
-    private fun applyDirectionSelection() {
-        val selectedDirection = directions[currentDirectionIndex]
-        tvSelectedDirection.text = selectedDirection.displayName
-        overlayView.config.bankDirection = selectedDirection
-        overlayView.invalidate()
-        prefs.saveConfig(overlayView.config)
+    private fun updatePocketHighlights() {
+        val density = themedContext.resources.displayMetrics.density
+        val active = overlayView.config.activePocket
+        val usePocketColors = overlayView.config.colorByPocket
+
+        for ((btn, pocket) in pocketButtons) {
+            val isSelected = pocket == active
+            val pocketColor = TableOverlayView.getPocketColor(pocket)
+            val strokeColor = if (isSelected) {
+                if (usePocketColors && pocket != Pocket.ALL) pocketColor else 0xFF00E5FF.toInt()
+            } else {
+                0x33FFFFFF
+            }
+            val bgColor = if (isSelected) 0xFF1F2937.toInt() else 0xFF111827.toInt()
+
+            btn.setTextColor(
+                if (usePocketColors && pocket != Pocket.ALL) pocketColor
+                else if (isSelected) 0xFF00E5FF.toInt()
+                else 0xFFE2E8F0.toInt()
+            )
+            btn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 6f * density
+                setColor(bgColor)
+                setStroke(((if (isSelected) 1.8f else 0.8f) * density).toInt(), strokeColor)
+            }
+        }
     }
 
-    private fun setupPocketSelector() {
-        tvSelectedPocket.text = pockets[currentPocketIndex].displayName
-
-        btnPrevPocket.setOnClickListener {
-            currentPocketIndex = (currentPocketIndex - 1 + pockets.size) % pockets.size
-            applyPocketSelection()
-        }
-
-        btnNextPocket.setOnClickListener {
-            currentPocketIndex = (currentPocketIndex + 1) % pockets.size
-            applyPocketSelection()
-        }
-
-        tvSelectedPocket.setOnClickListener {
-            currentPocketIndex = (currentPocketIndex + 1) % pockets.size
-            applyPocketSelection()
+    private fun setupDirectionGrid() {
+        updateDirectionHighlights()
+        for ((btn, direction) in directionButtons) {
+            btn.setOnClickListener {
+                overlayView.config.bankDirection = direction
+                overlayView.invalidate()
+                prefs.saveConfig(overlayView.config)
+                updateDirectionHighlights()
+            }
         }
     }
 
-    private fun applyPocketSelection() {
-        val selectedPocket = pockets[currentPocketIndex]
-        tvSelectedPocket.text = selectedPocket.displayName
-        overlayView.config.activePocket = selectedPocket
-        overlayView.invalidate()
-        prefs.saveConfig(overlayView.config)
+    private fun updateDirectionHighlights() {
+        val density = themedContext.resources.displayMetrics.density
+        val active = overlayView.config.bankDirection
+
+        for ((btn, direction) in directionButtons) {
+            val isSelected = direction == active
+            btn.setTextColor(if (isSelected) 0xFF00E5FF.toInt() else 0xFFCBD5E1.toInt())
+            btn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 6f * density
+                setColor(if (isSelected) 0xFF1F2937.toInt() else 0xFF111827.toInt())
+                setStroke(
+                    ((if (isSelected) 1.8f else 0.8f) * density).toInt(),
+                    if (isSelected) 0xFF00E5FF.toInt() else 0x33FFFFFF
+                )
+            }
+        }
     }
 
     private fun setupColorPicker() {
         updateColorSwatchHighlights(overlayView.config.lineColor)
         for ((view, color) in colorSwatches) {
             view.setOnClickListener {
+                overlayView.config.colorByPocket = false
+                switchColorByPocket.isChecked = false
                 overlayView.config.lineColor = color
                 overlayView.invalidate()
-                prefs.updateLineColor(color)
+                prefs.saveConfig(overlayView.config)
                 updateColorSwatchHighlights(color)
+                updatePocketHighlights()
             }
         }
     }
 
     private fun updateColorSwatchHighlights(activeColor: Int) {
         val density = themedContext.resources.displayMetrics.density
+        val isMonoMode = !overlayView.config.colorByPocket
         for ((view, color) in colorSwatches) {
-            val isSelected = color == activeColor
+            val isSelected = isMonoMode && color == activeColor
             val borderColor = if (isSelected) {
                 if (color == Color.WHITE) 0xFF00E5FF.toInt() else Color.WHITE
             } else {
@@ -294,9 +348,9 @@ class FloatingMenuManager(
         layoutBubble.visibility = View.GONE
         layoutExpandedPanel.visibility = View.VISIBLE
         val density = themedContext.resources.displayMetrics.density
-        val panelWidthPx = (220 * density).toInt()
+        val panelWidthPx = (224 * density).toInt()
         val screenH = overlayView.height.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
-        val maxPanelHeight = (screenH * 0.80f).toInt()
+        val maxPanelHeight = (screenH * 0.82f).toInt()
         layoutExpandedPanel.measure(
             View.MeasureSpec.makeMeasureSpec(panelWidthPx, View.MeasureSpec.EXACTLY),
             View.MeasureSpec.makeMeasureSpec(maxPanelHeight, View.MeasureSpec.AT_MOST)
