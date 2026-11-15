@@ -1,7 +1,9 @@
 package com.dayat.eightballline.view
 
 import android.content.Context
+import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.view.*
 import android.widget.*
@@ -42,7 +44,24 @@ class FloatingMenuManager(
     private val btnNextPocket: TextView = menuView.findViewById(R.id.btnNextPocket)
     private val tvOpacityLabel: TextView = menuView.findViewById(R.id.tvOpacityLabel)
     private val seekBarOpacity: SeekBar = menuView.findViewById(R.id.seekBarOpacity)
+    private val btnFloatColorCyan: View = menuView.findViewById(R.id.btnFloatColorCyan)
+    private val btnFloatColorGreen: View = menuView.findViewById(R.id.btnFloatColorGreen)
+    private val btnFloatColorYellow: View = menuView.findViewById(R.id.btnFloatColorYellow)
+    private val btnFloatColorRed: View = menuView.findViewById(R.id.btnFloatColorRed)
+    private val btnFloatColorWhite: View = menuView.findViewById(R.id.btnFloatColorWhite)
+    private val btnFloatColorBlack: View = menuView.findViewById(R.id.btnFloatColorBlack)
     private val btnCloseOverlay: Button = menuView.findViewById(R.id.btnCloseOverlay)
+
+    private val colorSwatches by lazy {
+        listOf(
+            btnFloatColorCyan to 0xFF00E5FF.toInt(),
+            btnFloatColorGreen to 0xFF10B981.toInt(),
+            btnFloatColorYellow to 0xFFF59E0B.toInt(),
+            btnFloatColorRed to 0xFFEF4444.toInt(),
+            btnFloatColorWhite to 0xFFFFFFFF.toInt(),
+            btnFloatColorBlack to 0xFF111827.toInt()
+        )
+    }
 
     private val pockets = Pocket.values()
     private var currentPocketIndex = pockets.indexOf(overlayView.config.activePocket).coerceAtLeast(0)
@@ -79,6 +98,7 @@ class FloatingMenuManager(
         setupListeners()
         setupDirectionSelector()
         setupPocketSelector()
+        setupColorPicker()
         windowManager.addView(menuView, layoutParams)
     }
 
@@ -237,6 +257,37 @@ class FloatingMenuManager(
         overlayView.config.activePocket = selectedPocket
         overlayView.invalidate()
         prefs.saveConfig(overlayView.config)
+    }
+
+    private fun setupColorPicker() {
+        updateColorSwatchHighlights(overlayView.config.lineColor)
+        for ((view, color) in colorSwatches) {
+            view.setOnClickListener {
+                overlayView.config.lineColor = color
+                overlayView.invalidate()
+                prefs.updateLineColor(color)
+                updateColorSwatchHighlights(color)
+            }
+        }
+    }
+
+    private fun updateColorSwatchHighlights(activeColor: Int) {
+        val density = themedContext.resources.displayMetrics.density
+        for ((view, color) in colorSwatches) {
+            val isSelected = color == activeColor
+            val borderColor = if (isSelected) {
+                if (color == Color.WHITE) 0xFF00E5FF.toInt() else Color.WHITE
+            } else {
+                0x55FFFFFF
+            }
+            val strokePx = ((if (isSelected) 2.5f else 1f) * density).toInt()
+            view.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 6f * density
+                setColor(color)
+                setStroke(strokePx, borderColor)
+            }
+        }
     }
 
     private fun expandMenu() {

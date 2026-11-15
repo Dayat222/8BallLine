@@ -261,6 +261,70 @@
                 android:max="255"
                 android:progress="210" />
 
+            <!-- Warna Garis (In-Game Color Picker) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Warna Garis:"
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="26dp"
+                android:layout_marginTop="3dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:id="@+id/btnFloatColorCyan"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="#00E5FF" />
+
+                <View
+                    android:id="@+id/btnFloatColorGreen"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="#10B981" />
+
+                <View
+                    android:id="@+id/btnFloatColorYellow"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="#F59E0B" />
+
+                <View
+                    android:id="@+id/btnFloatColorRed"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="#EF4444" />
+
+                <View
+                    android:id="@+id/btnFloatColorWhite"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
+                    android:background="#FFFFFF" />
+
+                <View
+                    android:id="@+id/btnFloatColorBlack"
+                    android:layout_width="0dp"
+                    android:layout_height="22dp"
+                    android:layout_weight="1"
+                    android:background="#111827" />
+            </LinearLayout>
+
             <!-- Close / Stop Service -->
             <Button
                 android:id="@+id/btnCloseOverlay"

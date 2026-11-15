@@ -127,12 +127,15 @@ class TableOverlayView(context: Context) : View(context) {
         linePaint.strokeWidth = config.lineWidth
 
         halfLinePaint.color = config.lineColor
-        halfLinePaint.alpha = (config.opacity * 0.60f).toInt().coerceIn(20, 255)
+        halfLinePaint.alpha = (config.opacity * 0.65f).toInt().coerceIn(20, 255)
         halfLinePaint.strokeWidth = (config.lineWidth * 0.72f).coerceAtLeast(1.0f)
 
         gridLinePaint.color = config.lineColor
-        gridLinePaint.alpha = (config.opacity * 0.20f).toInt().coerceIn(10, 80)
+        gridLinePaint.alpha = (config.opacity * 0.35f).toInt().coerceIn(20, 130)
         gridLinePaint.strokeWidth = 1f
+
+        halfDiamondPaint.color = config.lineColor
+        halfDiamondPaint.alpha = (config.opacity * 0.85f).toInt().coerceIn(40, 255)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -141,8 +144,9 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
-        // 1. Gambar Batas Meja (Cushions) & Grid Penghubung Diamond Tipis
+        // 1. Gambar Batas Meja (Cushions) & Grid Penghubung Diamond + Tick Marks (seperti stiker referensi)
         canvas.drawRect(config.left, config.top, config.right, config.bottom, cushionPaint)
+        val tickLen = 10f
         val diamonds = DiamondSystemCalculator.getDiamondPoints(config)
         val topPts = diamonds["top"]
         val bottomPts = diamonds["bottom"]
@@ -150,12 +154,20 @@ class TableOverlayView(context: Context) : View(context) {
         val rightPts = diamonds["right"]
         if (topPts != null && bottomPts != null && topPts.size == bottomPts.size) {
             for (i in 1 until topPts.size - 1) {
-                canvas.drawLine(topPts[i].x, topPts[i].y, bottomPts[i].x, bottomPts[i].y, gridLinePaint)
+                canvas.drawLine(
+                    topPts[i].x, topPts[i].y - tickLen,
+                    bottomPts[i].x, bottomPts[i].y + tickLen,
+                    gridLinePaint
+                )
             }
         }
         if (leftPts != null && rightPts != null && leftPts.size == rightPts.size) {
             for (i in 1 until leftPts.size - 1) {
-                canvas.drawLine(leftPts[i].x, leftPts[i].y, rightPts[i].x, rightPts[i].y, gridLinePaint)
+                canvas.drawLine(
+                    leftPts[i].x - tickLen, leftPts[i].y,
+                    rightPts[i].x + tickLen, rightPts[i].y,
+                    gridLinePaint
+                )
             }
         }
 
