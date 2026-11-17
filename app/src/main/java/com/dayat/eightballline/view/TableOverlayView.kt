@@ -133,15 +133,11 @@ class TableOverlayView(context: Context) : View(context) {
 
             val segments = DiamondSystemCalculator.calculateReferenceSegments(config)
 
-            // Garis sekunder (teal: half-diamond long rail & short rail)
+            // Garis sekunder (teal) di layer bawah, garis utama di layer atas
             for (seg in segments) {
                 if (!seg.isSecondary) continue
                 canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, secondaryPaint)
             }
-
-            // Garis tengah lurus (lubang tengah ke lubang tengah) + garis utama
-            val (cStart, cEnd) = DiamondSystemCalculator.getCenterCrossLine(config)
-            canvas.drawLine(cStart.x, cStart.y, cEnd.x, cEnd.y, primaryPaint)
 
             for (seg in segments) {
                 if (seg.isSecondary) continue
