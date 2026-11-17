@@ -25,7 +25,6 @@ class TableOverlayView(context: Context) : View(context) {
         }
 
     var onCalibrationChanged: ((TableConfig) -> Unit)? = null
-    var onViewSizeChanged: ((Int, Int) -> Unit)? = null
 
     private val primaryPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
@@ -93,8 +92,7 @@ class TableOverlayView(context: Context) : View(context) {
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
     }
 
-    // Dragging state for calibration
-    private var activeHandle = -1 // 0-3: Corners (TL, TR, BR, BL), 4: Center pan
+    private var activeHandle = -1
     private var lastTouchX = 0f
     private var lastTouchY = 0f
     private val handleRadius = 40f
@@ -106,9 +104,6 @@ class TableOverlayView(context: Context) : View(context) {
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        if (w > 0 && h > 0) {
-            onViewSizeChanged?.invoke(w, h)
-        }
         invalidate()
     }
 
@@ -122,7 +117,7 @@ class TableOverlayView(context: Context) : View(context) {
         secondaryPaint.strokeWidth = (config.lineWidth * 0.88f).coerceAtLeast(1.1f)
 
         framePaint.color = config.lineColor
-        framePaint.alpha = (config.opacity * 0.45f).toInt().coerceIn(20, 160)
+        framePaint.alpha = (config.opacity * 0.50f).toInt().coerceIn(25, 180)
         framePaint.strokeWidth = (config.lineWidth * 0.75f).coerceAtLeast(1.0f)
     }
 
@@ -132,30 +127,25 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
-        // 1. Garis Panduan Foto Referensi
+        // 1. Garis Panduan Foto Referensi (lengkap seluruh meja tanpa duplikasi)
         if (config.showBankShotLines) {
-            // Frame tepi meja tipis
             canvas.drawRect(config.left, config.top, config.right, config.bottom, framePaint)
 
-            val trajectories = DiamondSystemCalculator.calculateReferenceTrajectories(config)
+            val segments = DiamondSystemCalculator.calculateReferenceSegments(config)
 
-            // Gambar garis sekunder (teal: half-diamond long rail & short rail) lebih dulu di layer bawah
-            if (config.showSecondaryLines) {
-                for (traj in trajectories) {
-                    if (!traj.isSecondary) continue
-                    canvas.drawLine(traj.start.x, traj.start.y, traj.cushionHit.x, traj.cushionHit.y, secondaryPaint)
-                    canvas.drawLine(traj.cushionHit.x, traj.cushionHit.y, traj.targetPocket.x, traj.targetPocket.y, secondaryPaint)
-                }
+            // Garis sekunder (teal: half-diamond long rail & short rail)
+            for (seg in segments) {
+                if (!seg.isSecondary) continue
+                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, secondaryPaint)
             }
 
-            // Garis tengah lurus (lubang tengah ke lubang tengah) + garis utama di layer atas
+            // Garis tengah lurus (lubang tengah ke lubang tengah) + garis utama
             val (cStart, cEnd) = DiamondSystemCalculator.getCenterCrossLine(config)
             canvas.drawLine(cStart.x, cStart.y, cEnd.x, cEnd.y, primaryPaint)
 
-            for (traj in trajectories) {
-                if (traj.isSecondary) continue
-                canvas.drawLine(traj.start.x, traj.start.y, traj.cushionHit.x, traj.cushionHit.y, primaryPaint)
-                canvas.drawLine(traj.cushionHit.x, traj.cushionHit.y, traj.targetPocket.x, traj.targetPocket.y, primaryPaint)
+            for (seg in segments) {
+                if (seg.isSecondary) continue
+                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, primaryPaint)
             }
         }
 
@@ -186,7 +176,6 @@ class TableOverlayView(context: Context) : View(context) {
             val midX = (config.left + config.right) / 2f
             val midY = (config.top + config.bottom) / 2f
 
-            // 4 Sudut (Merah)
             val corners = arrayOf(
                 PointF2D(config.left, config.top),
                 PointF2D(config.right, config.top),
@@ -199,12 +188,10 @@ class TableOverlayView(context: Context) : View(context) {
                 canvas.drawCircle(pt.x, pt.y, handleRadius, handleBorderPaint)
             }
 
-            // Handle Geser Tengah (Cyan)
             canvas.drawCircle(midX, midY, centerHandleRadius, centerHandlePaint)
             canvas.drawCircle(midX, midY, centerHandleRadius, handleBorderPaint)
             canvas.drawText("GESER", midX, midY + 7f, centerTextPaint)
 
-            // Panduan di layar
             canvas.drawText(
                 "MODE KALIBRASI UKURAN MEJA AKTIF",
                 midX, midY - 60f, guideTextPaint
@@ -232,13 +219,11 @@ class TableOverlayView(context: Context) : View(context) {
                 val midX = (config.left + config.right) / 2f
                 val midY = (config.top + config.bottom) / 2f
 
-                // Cek apakah klik tombol tengah (center pan)
                 if (hypot((x - midX).toDouble(), (y - midY).toDouble()) <= centerHandleRadius * 1.8f) {
                     activeHandle = 4
                     return true
                 }
 
-                // Cek 4 sudut meja
                 val corners = arrayOf(
                     PointF2D(config.left, config.top),
                     PointF2D(config.right, config.top),
@@ -271,23 +256,23 @@ class TableOverlayView(context: Context) : View(context) {
                     val clampedY = y.coerceIn(margin, maxY)
 
                     when (activeHandle) {
-                        0 -> { // Top-Left
+                        0 -> {
                             config.left = clampedX.coerceAtMost(config.right - 80f)
                             config.top = clampedY.coerceAtMost(config.bottom - 80f)
                         }
-                        1 -> { // Top-Right
+                        1 -> {
                             config.right = clampedX.coerceAtLeast(config.left + 80f)
                             config.top = clampedY.coerceAtMost(config.bottom - 80f)
                         }
-                        2 -> { // Bottom-Right
+                        2 -> {
                             config.right = clampedX.coerceAtLeast(config.left + 80f)
                             config.bottom = clampedY.coerceAtLeast(config.top + 80f)
                         }
-                        3 -> { // Bottom-Left
+                        3 -> {
                             config.left = clampedX.coerceAtMost(config.right - 80f)
                             config.bottom = clampedY.coerceAtLeast(config.top + 80f)
                         }
-                        4 -> { // Center Pan
+                        4 -> {
                             val clampedDx = dx.coerceIn(margin - config.left, maxX - config.right)
                             val clampedDy = dy.coerceIn(margin - config.top, maxY - config.bottom)
                             config.left += clampedDx

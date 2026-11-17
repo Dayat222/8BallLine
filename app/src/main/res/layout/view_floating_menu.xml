@@ -23,7 +23,7 @@
     <!-- Expanded Floating Control Panel -->
     <ScrollView
         android:id="@+id/layoutExpandedPanel"
-        android:layout_width="224dp"
+        android:layout_width="216dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_floating_card"
         android:scrollbars="none"
@@ -87,117 +87,13 @@
                     android:scaleY="0.82" />
             </LinearLayout>
 
-            <!-- Toggle Garis Sekunder (Teal: Titik Tengah 0.5 & Rel Pendek) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Garis Sekunder (Teal)"
-                    android:textColor="@color/text_primary"
-                    android:textSize="11sp" />
-
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/switchSecondaryLines"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"
-                    android:scaleX="0.82"
-                    android:scaleY="0.82" />
-            </LinearLayout>
-
-            <!-- Filter Sudut (Opsional, default Semua) -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:text="Filter Lubang:"
-                android:textColor="@color/text_secondary"
-                android:textSize="10sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/btnPocketTL"
-                    android:layout_width="0dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="3dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="↖ K.Atas"
-                    android:textColor="@color/text_primary"
-                    android:textSize="9.5sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/btnPocketTR"
-                    android:layout_width="0dp"
-                    android:layout_height="24dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="↗ Kn.Atas"
-                    android:textColor="@color/text_primary"
-                    android:textSize="9.5sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/btnPocketBL"
-                    android:layout_width="0dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="3dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="↙ K.Bawah"
-                    android:textColor="@color/text_primary"
-                    android:textSize="9.5sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/btnPocketBR"
-                    android:layout_width="0dp"
-                    android:layout_height="24dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="↘ Kn.Bawah"
-                    android:textColor="@color/text_primary"
-                    android:textSize="9.5sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <TextView
-                android:id="@+id/btnPocketAll"
-                android:layout_width="match_parent"
-                android:layout_height="24dp"
-                android:layout_marginTop="3dp"
-                android:gravity="center"
-                android:text="✦ Semua Garis (Penuh)"
-                android:textColor="@color/text_primary"
-                android:textSize="9.5sp"
-                android:textStyle="bold" />
-
             <!-- Opacity Slider -->
             <TextView
                 android:id="@+id/tvOpacityLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Kecerahan / Opasitas (84%)"
+                android:text="Kecerahan / Opasitas (90%)"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -207,7 +103,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:max="255"
-                android:progress="215" />
+                android:progress="230" />
 
             <!-- Line Width Slider -->
             <TextView
@@ -232,7 +128,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                android:text="Tema 2 Warna Garis:"
+                android:text="Warna Garis:"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -282,7 +178,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
                 <Button

@@ -11,7 +11,6 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import com.dayat.eightballline.R
-import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.util.PreferencesManager
 import kotlin.math.abs
 
@@ -32,13 +31,6 @@ class FloatingMenuManager(
     private val layoutExpandedPanel: View = menuView.findViewById(R.id.layoutExpandedPanel)
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
-    private val switchSecondaryLines: SwitchCompat = menuView.findViewById(R.id.switchSecondaryLines)
-
-    private val btnPocketTL: TextView = menuView.findViewById(R.id.btnPocketTL)
-    private val btnPocketTR: TextView = menuView.findViewById(R.id.btnPocketTR)
-    private val btnPocketBL: TextView = menuView.findViewById(R.id.btnPocketBL)
-    private val btnPocketBR: TextView = menuView.findViewById(R.id.btnPocketBR)
-    private val btnPocketAll: TextView = menuView.findViewById(R.id.btnPocketAll)
 
     private val tvOpacityLabel: TextView = menuView.findViewById(R.id.tvOpacityLabel)
     private val seekBarOpacity: SeekBar = menuView.findViewById(R.id.seekBarOpacity)
@@ -55,20 +47,9 @@ class FloatingMenuManager(
     private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
     private val btnCloseOverlay: Button = menuView.findViewById(R.id.btnCloseOverlay)
 
-    private val pocketButtons by lazy {
-        listOf(
-            btnPocketTL to Pocket.TOP_LEFT,
-            btnPocketTR to Pocket.TOP_RIGHT,
-            btnPocketBL to Pocket.BOTTOM_LEFT,
-            btnPocketBR to Pocket.BOTTOM_RIGHT,
-            btnPocketAll to Pocket.ALL
-        )
-    }
-
-    // Pasangan warna (Garis Utama, Garis Sekunder)
     private val colorThemes by lazy {
         listOf(
-            Triple(btnThemeBlackTeal, 0xFF111827.toInt(), 0xFF0F766E.toInt()),   // Hitam + Teal (persis foto)
+            Triple(btnThemeBlackTeal, 0xFF111827.toInt(), 0xFF0D9488.toInt()),   // Hitam + Teal (persis foto)
             Triple(btnThemeWhiteTeal, 0xFFFFFFFF.toInt(), 0xFF14B8A6.toInt()),   // Putih + Teal
             Triple(btnThemeCyanGold, 0xFF00E5FF.toInt(), 0xFFF59E0B.toInt()),    // Cyan + Kuning
             Triple(btnThemeYellowGreen, 0xFFFACC15.toInt(), 0xFF10B981.toInt()), // Kuning + Hijau
@@ -103,7 +84,6 @@ class FloatingMenuManager(
         }
 
         setupListeners()
-        setupPocketGrid()
         setupThemePicker()
         windowManager.addView(menuView, layoutParams)
     }
@@ -147,13 +127,6 @@ class FloatingMenuManager(
         switchLines.isChecked = overlayView.config.showBankShotLines
         switchLines.setOnCheckedChangeListener { _, isChecked ->
             overlayView.config.showBankShotLines = isChecked
-            overlayView.invalidate()
-            prefs.saveConfig(overlayView.config)
-        }
-
-        switchSecondaryLines.isChecked = overlayView.config.showSecondaryLines
-        switchSecondaryLines.setOnCheckedChangeListener { _, isChecked ->
-            overlayView.config.showSecondaryLines = isChecked
             overlayView.invalidate()
             prefs.saveConfig(overlayView.config)
         }
@@ -220,37 +193,6 @@ class FloatingMenuManager(
         }
     }
 
-    private fun setupPocketGrid() {
-        updatePocketHighlights()
-        for ((btn, pocket) in pocketButtons) {
-            btn.setOnClickListener {
-                overlayView.config.activePocket = pocket
-                overlayView.invalidate()
-                prefs.saveConfig(overlayView.config)
-                updatePocketHighlights()
-            }
-        }
-    }
-
-    private fun updatePocketHighlights() {
-        val density = themedContext.resources.displayMetrics.density
-        val active = overlayView.config.activePocket
-
-        for ((btn, pocket) in pocketButtons) {
-            val isSelected = pocket == active
-            btn.setTextColor(if (isSelected) 0xFF00E5FF.toInt() else 0xFFE2E8F0.toInt())
-            btn.background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                cornerRadius = 5f * density
-                setColor(if (isSelected) 0xFF1F2937.toInt() else 0xFF111827.toInt())
-                setStroke(
-                    ((if (isSelected) 1.8f else 0.8f) * density).toInt(),
-                    if (isSelected) 0xFF00E5FF.toInt() else 0x33FFFFFF
-                )
-            }
-        }
-    }
-
     private fun setupThemePicker() {
         updateThemeHighlights()
         for ((view, primary, secondary) in colorThemes) {
@@ -288,7 +230,7 @@ class FloatingMenuManager(
         layoutBubble.visibility = View.GONE
         layoutExpandedPanel.visibility = View.VISIBLE
         val density = themedContext.resources.displayMetrics.density
-        val panelWidthPx = (224 * density).toInt()
+        val panelWidthPx = (216 * density).toInt()
         val screenH = overlayView.height.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
         val maxPanelHeight = (screenH * 0.82f).toInt()
         layoutExpandedPanel.measure(

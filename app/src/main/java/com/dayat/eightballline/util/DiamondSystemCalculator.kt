@@ -1,16 +1,14 @@
 package com.dayat.eightballline.util
 
-import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.model.TableOrientation
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
-data class ReferenceTrajectory(
-    val start: PointF2D,
-    val cushionHit: PointF2D,
-    val targetPocket: PointF2D,
-    val pocketType: Pocket,
+data class ReferenceSegment(
+    val p1: PointF2D,
+    val p2: PointF2D,
     val isSecondary: Boolean
 )
 
@@ -21,7 +19,7 @@ object DiamondSystemCalculator {
     }
 
     /**
-     * Menghitung posisi semua diamond utama pada rel meja biliar.
+     * Titik diamond utama pada rel meja:
      * Long rail: 8 segmen (0..8 -> titik 1..3, lubang tengah = 4, titik 5..7).
      * Short rail: 4 segmen (0..4 -> titik 1..3).
      */
@@ -50,9 +48,6 @@ object DiamondSystemCalculator {
         return result
     }
 
-    /**
-     * Menghitung titik tengah (half-diamond: 1.5, 2.5, 3.5, 4.5, 5.5, 6.5) pada long rail.
-     */
     private fun getLongRailHalfPoints(railPoints: List<PointF2D>): List<PointF2D> {
         val midPoints = mutableListOf<PointF2D>()
         for (i in 1 until railPoints.size - 2) {
@@ -63,39 +58,6 @@ object DiamondSystemCalculator {
         return midPoints
     }
 
-    /**
-     * Menghitung posisi 6 lubang (4 sudut + 2 tengah)
-     */
-    fun getPocketPositions(config: TableConfig): Map<Pocket, PointF2D> {
-        val l = config.left
-        val t = config.top
-        val r = config.right
-        val b = config.bottom
-
-        return if (config.orientation == TableOrientation.LANDSCAPE) {
-            mapOf(
-                Pocket.TOP_LEFT to PointF2D(l, t),
-                Pocket.TOP_RIGHT to PointF2D(r, t),
-                Pocket.BOTTOM_LEFT to PointF2D(l, b),
-                Pocket.BOTTOM_RIGHT to PointF2D(r, b),
-                Pocket.MIDDLE_LEFT to PointF2D(l + config.width / 2f, t),   // Tengah Atas
-                Pocket.MIDDLE_RIGHT to PointF2D(l + config.width / 2f, b)   // Tengah Bawah
-            )
-        } else {
-            mapOf(
-                Pocket.TOP_LEFT to PointF2D(l, t),
-                Pocket.TOP_RIGHT to PointF2D(r, t),
-                Pocket.BOTTOM_LEFT to PointF2D(l, b),
-                Pocket.BOTTOM_RIGHT to PointF2D(r, b),
-                Pocket.MIDDLE_LEFT to PointF2D(l, t + config.height / 2f),  // Tengah Kiri
-                Pocket.MIDDLE_RIGHT to PointF2D(r, t + config.height / 2f)  // Tengah Kanan
-            )
-        }
-    }
-
-    /**
-     * Garis tengah lurus yang menghubungkan kedua lubang tengah (seperti pada foto referensi).
-     */
     fun getCenterCrossLine(config: TableConfig): Pair<PointF2D, PointF2D> {
         return if (config.orientation == TableOrientation.LANDSCAPE) {
             val midX = config.left + config.width / 2f
@@ -107,147 +69,109 @@ object DiamondSystemCalculator {
     }
 
     /**
-     * Menghasilkan garis panduan persis sesuai foto referensi:
-     * - Garis utama (Primary): pantulan titik diamond 1..7 (termasuk titik tengah 4) di long rail menuju 4 lubang sudut.
-     * - Garis sekunder (Teal / Secondary):
-     *   1) Pantulan titik tengah 1.5, 2.5, 3.5, 4.5, 5.5, 6.5 di long rail.
-     *   2) Pantulan titik diamond 1, 2, 3 di short rail.
+     * Menghasilkan seluruh segmen garis persis seperti foto referensi (tanpa duplikasi garis simetris):
+     * - Utama (Hitam): garis tengah lurus + pantulan titik 1..7 long rail ke 4 lubang sudut.
+     * - Sekunder (Teal): pantulan titik tengah 1.5..6.5 long rail + pantulan titik 1..3 short rail ke 4 lubang sudut.
      */
-    fun calculateReferenceTrajectories(config: TableConfig): List<ReferenceTrajectory> {
-        val result = mutableListOf<ReferenceTrajectory>()
-        val pockets = getPocketPositions(config)
+    fun calculateReferenceSegments(config: TableConfig): List<ReferenceSegment> {
+        val segments = mutableListOf<ReferenceSegment>()
+        val seenKeys = HashSet<String>()
         val diamonds = getDiamondPoints(config)
-        val activeFilter = config.activePocket
 
-        val cornerPockets = listOf(
-            Pocket.TOP_LEFT,
-            Pocket.TOP_RIGHT,
-            Pocket.BOTTOM_LEFT,
-            Pocket.BOTTOM_RIGHT
-        )
+        val l = config.left
+        val t = config.top
+        val r = config.right
+        val b = config.bottom
 
-        for (pocketType in cornerPockets) {
-            if (activeFilter != Pocket.ALL && activeFilter != pocketType) {
-                continue
+        val topLeft = PointF2D(l, t)
+        val topRight = PointF2D(r, t)
+        val bottomLeft = PointF2D(l, b)
+        val bottomRight = PointF2D(r, b)
+
+        if (config.orientation == TableOrientation.LANDSCAPE) {
+            val topRail = diamonds["top"] ?: return segments
+            val bottomRail = diamonds["bottom"] ?: return segments
+            val leftRail = diamonds["left"] ?: return segments
+            val rightRail = diamonds["right"] ?: return segments
+
+            // Garis utama: long rail (1..7)
+            for (pocketPos in listOf(topLeft, topRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, bottomRail.subList(1, 8), RailEdge.BOTTOM, isSecondary = false)
             }
-            val pocketPos = pockets[pocketType] ?: continue
+            for (pocketPos in listOf(bottomLeft, bottomRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, topRail.subList(1, 8), RailEdge.TOP, isSecondary = false)
+            }
 
-            if (config.orientation == TableOrientation.LANDSCAPE) {
-                // LANDSCAPE: Long rails = TOP & BOTTOM, Short rails = LEFT & RIGHT
-                val oppositeLongEdge = if (pocketType == Pocket.TOP_LEFT || pocketType == Pocket.TOP_RIGHT) {
-                    RailEdge.BOTTOM
-                } else {
-                    RailEdge.TOP
-                }
-                val longRailPoints = diamonds[if (oppositeLongEdge == RailEdge.TOP) "top" else "bottom"]
+            // Garis sekunder: long rail half-diamonds (1.5..6.5) & short rail (1..3)
+            for (pocketPos in listOf(topLeft, topRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, getLongRailHalfPoints(bottomRail), RailEdge.BOTTOM, isSecondary = true)
+            }
+            for (pocketPos in listOf(bottomLeft, bottomRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, getLongRailHalfPoints(topRail), RailEdge.TOP, isSecondary = true)
+            }
+            for (pocketPos in listOf(topLeft, bottomLeft)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, rightRail.subList(1, 4), RailEdge.RIGHT, isSecondary = true)
+            }
+            for (pocketPos in listOf(topRight, bottomRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, leftRail.subList(1, 4), RailEdge.LEFT, isSecondary = true)
+            }
+        } else {
+            val leftRail = diamonds["left"] ?: return segments
+            val rightRail = diamonds["right"] ?: return segments
+            val topRail = diamonds["top"] ?: return segments
+            val bottomRail = diamonds["bottom"] ?: return segments
 
-                if (longRailPoints != null) {
-                    // Utama: titik 1..7 (termasuk titik tengah 4 -> sudut ke tengah ke sudut)
-                    addRailBounces(
-                        out = result,
-                        config = config,
-                        pocketType = pocketType,
-                        pocketPos = pocketPos,
-                        hitPoints = longRailPoints.subList(1, longRailPoints.size - 1),
-                        railEdge = oppositeLongEdge,
-                        isSecondary = false
-                    )
-                    // Sekunder: half-diamonds 1.5, 2.5, 3.5, 4.5, 5.5, 6.5
-                    if (config.showSecondaryLines) {
-                        addRailBounces(
-                            out = result,
-                            config = config,
-                            pocketType = pocketType,
-                            pocketPos = pocketPos,
-                            hitPoints = getLongRailHalfPoints(longRailPoints),
-                            railEdge = oppositeLongEdge,
-                            isSecondary = true
-                        )
-                    }
-                }
+            // Garis utama: long rail (1..7)
+            for (pocketPos in listOf(topLeft, bottomLeft)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, rightRail.subList(1, 8), RailEdge.RIGHT, isSecondary = false)
+            }
+            for (pocketPos in listOf(topRight, bottomRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, leftRail.subList(1, 8), RailEdge.LEFT, isSecondary = false)
+            }
 
-                // Short rail bounces (titik 1, 2, 3 -> sekunder/teal)
-                if (config.showSecondaryLines) {
-                    val oppositeShortEdge = if (pocketType == Pocket.TOP_LEFT || pocketType == Pocket.BOTTOM_LEFT) {
-                        RailEdge.RIGHT
-                    } else {
-                        RailEdge.LEFT
-                    }
-                    val shortRailPoints = diamonds[if (oppositeShortEdge == RailEdge.LEFT) "left" else "right"]
-                    if (shortRailPoints != null) {
-                        addRailBounces(
-                            out = result,
-                            config = config,
-                            pocketType = pocketType,
-                            pocketPos = pocketPos,
-                            hitPoints = shortRailPoints.subList(1, shortRailPoints.size - 1),
-                            railEdge = oppositeShortEdge,
-                            isSecondary = true
-                        )
-                    }
-                }
-            } else {
-                // PORTRAIT (orientasi sama persis dengan foto referensi):
-                // Long rails = LEFT & RIGHT, Short rails = TOP & BOTTOM
-                val oppositeLongEdge = if (pocketType == Pocket.TOP_LEFT || pocketType == Pocket.BOTTOM_LEFT) {
-                    RailEdge.RIGHT
-                } else {
-                    RailEdge.LEFT
-                }
-                val longRailPoints = diamonds[if (oppositeLongEdge == RailEdge.LEFT) "left" else "right"]
-
-                if (longRailPoints != null) {
-                    addRailBounces(
-                        out = result,
-                        config = config,
-                        pocketType = pocketType,
-                        pocketPos = pocketPos,
-                        hitPoints = longRailPoints.subList(1, longRailPoints.size - 1),
-                        railEdge = oppositeLongEdge,
-                        isSecondary = false
-                    )
-                    if (config.showSecondaryLines) {
-                        addRailBounces(
-                            out = result,
-                            config = config,
-                            pocketType = pocketType,
-                            pocketPos = pocketPos,
-                            hitPoints = getLongRailHalfPoints(longRailPoints),
-                            railEdge = oppositeLongEdge,
-                            isSecondary = true
-                        )
-                    }
-                }
-
-                if (config.showSecondaryLines) {
-                    val oppositeShortEdge = if (pocketType == Pocket.TOP_LEFT || pocketType == Pocket.TOP_RIGHT) {
-                        RailEdge.BOTTOM
-                    } else {
-                        RailEdge.TOP
-                    }
-                    val shortRailPoints = diamonds[if (oppositeShortEdge == RailEdge.TOP) "top" else "bottom"]
-                    if (shortRailPoints != null) {
-                        addRailBounces(
-                            out = result,
-                            config = config,
-                            pocketType = pocketType,
-                            pocketPos = pocketPos,
-                            hitPoints = shortRailPoints.subList(1, shortRailPoints.size - 1),
-                            railEdge = oppositeShortEdge,
-                            isSecondary = true
-                        )
-                    }
-                }
+            // Garis sekunder: long rail half-diamonds (1.5..6.5) & short rail (1..3)
+            for (pocketPos in listOf(topLeft, bottomLeft)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, getLongRailHalfPoints(rightRail), RailEdge.RIGHT, isSecondary = true)
+            }
+            for (pocketPos in listOf(topRight, bottomRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, getLongRailHalfPoints(leftRail), RailEdge.LEFT, isSecondary = true)
+            }
+            for (pocketPos in listOf(topLeft, topRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, bottomRail.subList(1, 4), RailEdge.BOTTOM, isSecondary = true)
+            }
+            for (pocketPos in listOf(bottomLeft, bottomRight)) {
+                addRailBounces(segments, seenKeys, config, pocketPos, topRail.subList(1, 4), RailEdge.TOP, isSecondary = true)
             }
         }
 
-        return result
+        return segments
+    }
+
+    private fun addUniqueSegment(
+        out: MutableList<ReferenceSegment>,
+        seenKeys: HashSet<String>,
+        a: PointF2D,
+        b: PointF2D,
+        isSecondary: Boolean
+    ) {
+        val ax = a.x.roundToInt()
+        val ay = a.y.roundToInt()
+        val bx = b.x.roundToInt()
+        val by = b.y.roundToInt()
+        val key = if (ax < bx || (ax == bx && ay <= by)) {
+            "$ax,$ay-$bx,$by-$isSecondary"
+        } else {
+            "$bx,$by-$ax,$ay-$isSecondary"
+        }
+        if (seenKeys.add(key)) {
+            out.add(ReferenceSegment(a, b, isSecondary))
+        }
     }
 
     private fun addRailBounces(
-        out: MutableList<ReferenceTrajectory>,
+        out: MutableList<ReferenceSegment>,
+        seenKeys: HashSet<String>,
         config: TableConfig,
-        pocketType: Pocket,
         pocketPos: PointF2D,
         hitPoints: List<PointF2D>,
         railEdge: RailEdge,
@@ -268,15 +192,8 @@ object DiamondSystemCalculator {
                 excludeEdge = railEdge
             ) ?: continue
 
-            out.add(
-                ReferenceTrajectory(
-                    start = startPos,
-                    cushionHit = hitPt,
-                    targetPocket = pocketPos,
-                    pocketType = pocketType,
-                    isSecondary = isSecondary
-                )
-            )
+            addUniqueSegment(out, seenKeys, startPos, hitPt, isSecondary)
+            addUniqueSegment(out, seenKeys, hitPt, pocketPos, isSecondary)
         }
     }
 
