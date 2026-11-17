@@ -10,12 +10,6 @@ enum class Pocket(val id: Int, val displayName: String) {
     MIDDLE_RIGHT(6, "Tengah Bawah / Kanan")
 }
 
-enum class BankDirection(val id: Int, val displayName: String) {
-    ALL(0, "Semua Arah (Atas/Bawah & Kiri/Kanan)"),
-    TOP_BOTTOM(1, "Pantul Atas & Bawah"),
-    LEFT_RIGHT(2, "Pantul Kiri & Kanan")
-}
-
 enum class TableOrientation(val displayName: String) {
     LANDSCAPE("Landscape (Standar 8BP)"),
     PORTRAIT("Portrait (Tegak)")
@@ -30,15 +24,12 @@ data class TableConfig(
     var bottom: Float = 0f,
     var orientation: TableOrientation = TableOrientation.LANDSCAPE,
     var activePocket: Pocket = Pocket.ALL,
-    var bankDirection: BankDirection = BankDirection.ALL,
-    var enabledBounces: MutableSet<Int> = mutableSetOf(1), // Kombinasi bebas: 0 = Langsung, 1, 2 pantul
-    var colorByPocket: Boolean = true,
-    var lineColor: Int = 0xFF00E5FF.toInt(), // Cyan neon
-    var lineWidth: Float = 2.6f,
-    var opacity: Int = 240, // 0 - 255
-    var showDiamonds: Boolean = true,
-    var showHalfDiamonds: Boolean = true,
-    var showBankShotLines: Boolean = true
+    var lineColor: Int = 0xFFFFFFFF.toInt(),          // Garis utama (Putih terang)
+    var secondaryLineColor: Int = 0xFF14B8A6.toInt(), // Garis sekunder (Teal seperti foto referensi)
+    var lineWidth: Float = 1.6f,
+    var opacity: Int = 215, // 0 - 255
+    var showBankShotLines: Boolean = true,
+    var showSecondaryLines: Boolean = true
 ) {
     val width: Float get() = (right - left).coerceAtLeast(10f)
     val height: Float get() = (bottom - top).coerceAtLeast(10f)

@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.*
 import android.view.MotionEvent
 import android.view.View
-import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.util.DiamondSystemCalculator
@@ -25,51 +24,28 @@ class TableOverlayView(context: Context) : View(context) {
             invalidate()
         }
 
-    var aimTarget: PointF2D? = null
-        set(value) {
-            field = value
-            invalidate()
-        }
-
     var onCalibrationChanged: ((TableConfig) -> Unit)? = null
     var onViewSizeChanged: ((Int, Int) -> Unit)? = null
 
-    // Paints
-    private val linePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val primaryPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
 
-    private val halfLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-        pathEffect = DashPathEffect(floatArrayOf(10f, 8f), 0f)
-    }
-
-    private val aimPinLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val secondaryPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
 
-    private val directLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val framePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-        pathEffect = DashPathEffect(floatArrayOf(16f, 10f), 0f)
-    }
-
-    private val bounceDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-    }
-
-    private val gridLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 1f
+        strokeWidth = 1.4f
     }
 
     private val cushionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = 2f
-        color = 0x88FFFFFF.toInt()
+        color = 0xAAFFFFFF.toInt()
         pathEffect = DashPathEffect(floatArrayOf(15f, 15f), 0f)
     }
 
@@ -78,19 +54,8 @@ class TableOverlayView(context: Context) : View(context) {
         color = 0xFFFFFFFF.toInt()
     }
 
-    private val halfDiamondPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
-        color = 0xCC00E5FF.toInt()
-    }
-
-    private val pocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeWidth = 3f
-        color = 0xFFFFD700.toInt() // Gold pocket rings
-    }
-
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 24f
+        textSize = 22f
         color = 0xFFFFFFFF.toInt()
         textAlign = Paint.Align.CENTER
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
@@ -99,7 +64,7 @@ class TableOverlayView(context: Context) : View(context) {
 
     private val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = 0xFFFF3366.toInt() // Red handle
+        color = 0xFFFF3366.toInt()
     }
 
     private val handleBorderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -109,7 +74,7 @@ class TableOverlayView(context: Context) : View(context) {
     }
 
     private val guideTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        textSize = 32f
+        textSize = 30f
         color = 0xFF00FFCC.toInt()
         textAlign = Paint.Align.CENTER
         typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
@@ -118,7 +83,7 @@ class TableOverlayView(context: Context) : View(context) {
 
     private val centerHandlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = 0xFF00E5FF.toInt() // Cyan center
+        color = 0xFF00E5FF.toInt()
     }
 
     private val centerTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -141,40 +106,24 @@ class TableOverlayView(context: Context) : View(context) {
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        // Jangan mengubah atau melakukan clamp koordinat kalibrasi tersimpan saat orientasi berubah
         if (w > 0 && h > 0) {
             onViewSizeChanged?.invoke(w, h)
         }
         invalidate()
     }
 
-    companion object {
-        fun getPocketColor(pocket: Pocket): Int = when (pocket) {
-            Pocket.TOP_LEFT -> 0xFF00E5FF.toInt()     // Cyan
-            Pocket.TOP_RIGHT -> 0xFFF59E0B.toInt()    // Kuning Gold
-            Pocket.BOTTOM_LEFT -> 0xFF10B981.toInt()  // Hijau Emerald
-            Pocket.BOTTOM_RIGHT -> 0xFFFB7185.toInt() // Merah Rose
-            Pocket.MIDDLE_LEFT -> 0xFFA78BFA.toInt()  // Ungu Neon
-            Pocket.MIDDLE_RIGHT -> 0xFF38BDF8.toInt() // Biru Langit
-            Pocket.ALL -> 0xFF00E5FF.toInt()
-        }
-    }
-
     private fun updatePaints() {
-        linePaint.color = config.lineColor
-        linePaint.alpha = config.opacity
-        linePaint.strokeWidth = config.lineWidth
+        primaryPaint.color = config.lineColor
+        primaryPaint.alpha = config.opacity
+        primaryPaint.strokeWidth = config.lineWidth
 
-        halfLinePaint.color = config.lineColor
-        halfLinePaint.alpha = (config.opacity * 0.68f).toInt().coerceIn(30, 255)
-        halfLinePaint.strokeWidth = (config.lineWidth * 0.72f).coerceAtLeast(1.3f)
+        secondaryPaint.color = config.secondaryLineColor
+        secondaryPaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(30, 255)
+        secondaryPaint.strokeWidth = (config.lineWidth * 0.88f).coerceAtLeast(1.1f)
 
-        gridLinePaint.color = if (config.colorByPocket) 0xFFFFFFFF.toInt() else config.lineColor
-        gridLinePaint.alpha = (config.opacity * 0.25f).toInt().coerceIn(18, 95)
-        gridLinePaint.strokeWidth = (config.lineWidth * 0.45f).coerceAtLeast(1.1f)
-
-        halfDiamondPaint.color = if (config.colorByPocket) 0xFFFFFFFF.toInt() else config.lineColor
-        halfDiamondPaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(50, 255)
+        framePaint.color = config.lineColor
+        framePaint.alpha = (config.opacity * 0.45f).toInt().coerceIn(20, 160)
+        framePaint.strokeWidth = (config.lineWidth * 0.75f).coerceAtLeast(1.0f)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -183,61 +132,34 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
-        // 1. Gambar Lubang (6 Pockets) dengan warna penanda
-        val pockets = DiamondSystemCalculator.getPocketPositions(config)
-        for ((pocketType, pos) in pockets) {
-            pocketPaint.color = if (config.colorByPocket) getPocketColor(pocketType) else 0xFFFFD700.toInt()
-            canvas.drawCircle(pos.x, pos.y, 22f, pocketPaint)
-        }
+        // 1. Garis Panduan Foto Referensi
+        if (config.showBankShotLines) {
+            // Frame tepi meja tipis
+            canvas.drawRect(config.left, config.top, config.right, config.bottom, framePaint)
 
-        // 2. Gambar Jalur Pin Bidik Bola (kombinasi 0 = Langsung, 1 / 2 / 3 pantulan)
-        val activeAimTarget = aimTarget
-        if (config.showBankShotLines && activeAimTarget != null) {
-            val aimTrajectories = DiamondSystemCalculator.calculateAimPinTrajectories(config, activeAimTarget)
-            val hasBounceLines = config.enabledBounces.any { it in 1..3 }
-            for (traj in aimTrajectories) {
-                val pts = traj.points
-                if (pts.size < 2) continue
+            val trajectories = DiamondSystemCalculator.calculateReferenceTrajectories(config)
 
-                val trajColor = if (config.colorByPocket) getPocketColor(traj.pocketType) else config.lineColor
-                val isDirectShot = pts.size == 2
-
-                if (isDirectShot && hasBounceLines) {
-                    // Saat digabung dengan garis pantul, garis langsung digambar putus-putus agar mudah dibedakan
-                    directLinePaint.color = trajColor
-                    directLinePaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(40, 255)
-                    directLinePaint.strokeWidth = (config.lineWidth * 0.85f).coerceAtLeast(1.6f)
-                    canvas.drawLine(pts[0].x, pts[0].y, pts[1].x, pts[1].y, directLinePaint)
-                    continue
+            // Gambar garis sekunder (teal: half-diamond long rail & short rail) lebih dulu di layer bawah
+            if (config.showSecondaryLines) {
+                for (traj in trajectories) {
+                    if (!traj.isSecondary) continue
+                    canvas.drawLine(traj.start.x, traj.start.y, traj.cushionHit.x, traj.cushionHit.y, secondaryPaint)
+                    canvas.drawLine(traj.cushionHit.x, traj.cushionHit.y, traj.targetPocket.x, traj.targetPocket.y, secondaryPaint)
                 }
+            }
 
-                aimPinLinePaint.color = trajColor
-                aimPinLinePaint.alpha = config.opacity
+            // Garis tengah lurus (lubang tengah ke lubang tengah) + garis utama di layer atas
+            val (cStart, cEnd) = DiamondSystemCalculator.getCenterCrossLine(config)
+            canvas.drawLine(cStart.x, cStart.y, cEnd.x, cEnd.y, primaryPaint)
 
-                for (i in 0 until pts.size - 1) {
-                    // Segmen pertama (dari bola) paling tegas; segmen pantulan berikutnya sedikit lebih tipis
-                    aimPinLinePaint.strokeWidth = if (i == 0) {
-                        config.lineWidth
-                    } else {
-                        (config.lineWidth * 0.78f).coerceAtLeast(1.5f)
-                    }
-                    canvas.drawLine(pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y, aimPinLinePaint)
-                }
-
-                // Titik pantul terang pada setiap bantalan
-                for (i in 1 until pts.size - 1) {
-                    val bouncePt = pts[i]
-                    bounceDotPaint.color = 0xFFFFFFFF.toInt()
-                    bounceDotPaint.alpha = config.opacity
-                    canvas.drawCircle(bouncePt.x, bouncePt.y, 7.5f, bounceDotPaint)
-                    bounceDotPaint.color = trajColor
-                    bounceDotPaint.alpha = config.opacity
-                    canvas.drawCircle(bouncePt.x, bouncePt.y, 4.8f, bounceDotPaint)
-                }
+            for (traj in trajectories) {
+                if (traj.isSecondary) continue
+                canvas.drawLine(traj.start.x, traj.start.y, traj.cushionHit.x, traj.cushionHit.y, primaryPaint)
+                canvas.drawLine(traj.cushionHit.x, traj.cushionHit.y, traj.targetPocket.x, traj.targetPocket.y, primaryPaint)
             }
         }
 
-        // 3. Elemen Meja & Handle Kalibrasi (hanya tampil saat Mode Kalibrasi aktif)
+        // 2. Elemen Kalibrasi (hanya tampil saat Mode Kalibrasi aktif)
         if (isCalibrationMode) {
             canvas.drawRect(config.left, config.top, config.right, config.bottom, cushionPaint)
 
@@ -365,7 +287,7 @@ class TableOverlayView(context: Context) : View(context) {
                             config.left = clampedX.coerceAtMost(config.right - 80f)
                             config.bottom = clampedY.coerceAtLeast(config.top + 80f)
                         }
-                        4 -> { // Center Pan (Geser seluruh meja, tetap di dalam layar)
+                        4 -> { // Center Pan
                             val clampedDx = dx.coerceIn(margin - config.left, maxX - config.right)
                             val clampedDy = dy.coerceIn(margin - config.top, maxY - config.bottom)
                             config.left += clampedDx

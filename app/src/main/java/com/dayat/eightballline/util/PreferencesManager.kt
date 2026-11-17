@@ -2,7 +2,6 @@ package com.dayat.eightballline.util
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.dayat.eightballline.model.BankDirection
 import com.dayat.eightballline.model.Pocket
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.model.TableOrientation
@@ -28,21 +27,18 @@ class PreferencesManager(context: Context) {
             putBoolean("has_saved_calibration", true)
             putString("table_orientation", config.orientation.name)
             putInt("active_pocket", config.activePocket.id)
-            putInt("bank_direction", config.bankDirection.id)
-            putString("enabled_bounces_csv", config.enabledBounces.sorted().joinToString(","))
-            putBoolean("color_by_pocket", config.colorByPocket)
-            putInt("line_color", config.lineColor)
-            putFloat("line_width_v3", config.lineWidth)
-            putInt("line_opacity_v2", config.opacity)
-            putBoolean("show_diamonds", config.showDiamonds)
-            putBoolean("show_half_lines_v2", config.showHalfDiamonds)
+            putInt("ref_line_color", config.lineColor)
+            putInt("ref_secondary_color", config.secondaryLineColor)
+            putFloat("ref_line_width", config.lineWidth)
+            putInt("ref_line_opacity", config.opacity)
             putBoolean("show_lines", config.showBankShotLines)
+            putBoolean("show_secondary_lines", config.showSecondaryLines)
             apply()
         }
     }
 
     fun updateLineColor(color: Int) {
-        prefs.edit().putInt("line_color", color).apply()
+        prefs.edit().putInt("ref_line_color", color).apply()
     }
 
     fun updateOrientation(orientation: TableOrientation) {
@@ -66,7 +62,6 @@ class PreferencesManager(context: Context) {
         val bottom: Float
 
         if (hasSavedCalibration()) {
-            // Pertahankan hasil kalibrasi user apa adanya tanpa diubah/di-clamp otomatis
             val savedLeft = prefs.getFloat("table_left", defLeft)
             val savedTop = prefs.getFloat("table_top", defTop)
             val savedRight = prefs.getFloat("table_right", defRight)
@@ -97,27 +92,13 @@ class PreferencesManager(context: Context) {
         val pocketId = prefs.getInt("active_pocket", Pocket.ALL.id)
         val activePocket = Pocket.values().firstOrNull { it.id == pocketId } ?: Pocket.ALL
 
-        val directionId = prefs.getInt("bank_direction", BankDirection.ALL.id)
-        val bankDirection = BankDirection.values().firstOrNull { it.id == directionId } ?: BankDirection.ALL
+        val lineColor = prefs.getInt("ref_line_color", 0xFFFFFFFF.toInt())
+        val secondaryLineColor = prefs.getInt("ref_secondary_color", 0xFF14B8A6.toInt())
+        val lineWidth = prefs.getFloat("ref_line_width", 1.6f)
+        val opacity = prefs.getInt("ref_line_opacity", 215)
 
-        val enabledBounces: MutableSet<Int> = if (prefs.contains("enabled_bounces_csv")) {
-            val csv = prefs.getString("enabled_bounces_csv", "1").orEmpty()
-            csv.split(",")
-                .mapNotNull { it.trim().toIntOrNull() }
-                .filter { it in 0..2 }
-                .toMutableSet()
-                .also { if (it.isEmpty() && csv.contains("3")) it.add(1) }
-        } else {
-            mutableSetOf(prefs.getInt("bounce_count", 1).coerceIn(0, 2))
-        }
-        val colorByPocket = prefs.getBoolean("color_by_pocket", true)
-        val lineColor = prefs.getInt("line_color", 0xFF00E5FF.toInt())
-        val lineWidth = prefs.getFloat("line_width_v3", 2.6f)
-        val opacity = prefs.getInt("line_opacity_v2", 240)
-
-        val showDiamonds = prefs.getBoolean("show_diamonds", true)
-        val showHalfDiamonds = prefs.getBoolean("show_half_lines_v2", true)
         val showLines = prefs.getBoolean("show_lines", true)
+        val showSecondaryLines = prefs.getBoolean("show_secondary_lines", true)
 
         return TableConfig(
             left = left,
@@ -126,15 +107,12 @@ class PreferencesManager(context: Context) {
             bottom = bottom,
             orientation = orientation,
             activePocket = activePocket,
-            bankDirection = bankDirection,
-            enabledBounces = enabledBounces,
-            colorByPocket = colorByPocket,
             lineColor = lineColor,
+            secondaryLineColor = secondaryLineColor,
             lineWidth = lineWidth,
             opacity = opacity,
-            showDiamonds = showDiamonds,
-            showHalfDiamonds = showHalfDiamonds,
-            showBankShotLines = showLines
+            showBankShotLines = showLines,
+            showSecondaryLines = showSecondaryLines
         )
     }
 
