@@ -2,6 +2,7 @@ package com.dayat.eightballline.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.dayat.eightballline.model.PocketFilter
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.model.TableOrientation
 
@@ -25,17 +26,19 @@ class PreferencesManager(context: Context) {
             putFloat("table_bottom", config.bottom)
             putBoolean("has_saved_calibration", true)
             putString("table_orientation", config.orientation.name)
-            putInt("photo_line_color", config.lineColor)
-            putInt("photo_secondary_color", config.secondaryLineColor)
+            putInt("pocket_filter", config.pocketFilter.id)
+            putInt("top_line_color", config.topLineColor)
+            putInt("bottom_line_color", config.bottomLineColor)
+            putInt("middle_line_color", config.middleLineColor)
             putFloat("photo_line_width", config.lineWidth)
-            putInt("photo_line_opacity", config.opacity)
+            putInt("photo_line_opacity_v2", config.opacity)
             putBoolean("show_lines", config.showBankShotLines)
             apply()
         }
     }
 
     fun updateLineColor(color: Int) {
-        prefs.edit().putInt("photo_line_color", color).apply()
+        prefs.edit().putInt("top_line_color", color).apply()
     }
 
     fun updateOrientation(orientation: TableOrientation) {
@@ -86,10 +89,14 @@ class PreferencesManager(context: Context) {
             bottom = defBottom
         }
 
-        val lineColor = prefs.getInt("photo_line_color", 0xFF111827.toInt())
-        val secondaryLineColor = prefs.getInt("photo_secondary_color", 0xFF0D9488.toInt())
+        val filterId = prefs.getInt("pocket_filter", PocketFilter.ALL.id)
+        val pocketFilter = PocketFilter.values().firstOrNull { it.id == filterId } ?: PocketFilter.ALL
+
+        val topLineColor = prefs.getInt("top_line_color", 0xFF00E5FF.toInt())
+        val bottomLineColor = prefs.getInt("bottom_line_color", 0xFFEF4444.toInt())
+        val middleLineColor = prefs.getInt("middle_line_color", 0xFF111827.toInt())
         val lineWidth = prefs.getFloat("photo_line_width", 1.6f)
-        val opacity = prefs.getInt("photo_line_opacity", 230)
+        val opacity = prefs.getInt("photo_line_opacity_v2", 220)
         val showLines = prefs.getBoolean("show_lines", true)
 
         return TableConfig(
@@ -98,8 +105,10 @@ class PreferencesManager(context: Context) {
             right = right,
             bottom = bottom,
             orientation = orientation,
-            lineColor = lineColor,
-            secondaryLineColor = secondaryLineColor,
+            pocketFilter = pocketFilter,
+            topLineColor = topLineColor,
+            bottomLineColor = bottomLineColor,
+            middleLineColor = middleLineColor,
             lineWidth = lineWidth,
             opacity = opacity,
             showBankShotLines = showLines

@@ -7,6 +7,7 @@ import android.view.View
 import com.dayat.eightballline.model.PointF2D
 import com.dayat.eightballline.model.TableConfig
 import com.dayat.eightballline.util.DiamondSystemCalculator
+import com.dayat.eightballline.util.LineCategory
 import kotlin.math.hypot
 
 class TableOverlayView(context: Context) : View(context) {
@@ -26,12 +27,22 @@ class TableOverlayView(context: Context) : View(context) {
 
     var onCalibrationChanged: ((TableConfig) -> Unit)? = null
 
-    private val primaryPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val topPocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
 
-    private val secondaryPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val bottomPocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+
+    private val middleGridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        strokeCap = Paint.Cap.ROUND
+    }
+
+    private val kitchenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
@@ -108,16 +119,24 @@ class TableOverlayView(context: Context) : View(context) {
     }
 
     private fun updatePaints() {
-        primaryPaint.color = config.lineColor
-        primaryPaint.alpha = config.opacity
-        primaryPaint.strokeWidth = config.lineWidth
+        topPocketPaint.color = config.topLineColor
+        topPocketPaint.alpha = config.opacity
+        topPocketPaint.strokeWidth = config.lineWidth
 
-        secondaryPaint.color = config.secondaryLineColor
-        secondaryPaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(30, 255)
-        secondaryPaint.strokeWidth = (config.lineWidth * 0.88f).coerceAtLeast(1.1f)
+        bottomPocketPaint.color = config.bottomLineColor
+        bottomPocketPaint.alpha = config.opacity
+        bottomPocketPaint.strokeWidth = config.lineWidth
 
-        framePaint.color = config.lineColor
-        framePaint.alpha = (config.opacity * 0.50f).toInt().coerceIn(25, 180)
+        middleGridPaint.color = config.middleLineColor
+        middleGridPaint.alpha = (config.opacity * 0.85f).toInt().coerceIn(30, 255)
+        middleGridPaint.strokeWidth = (config.lineWidth * 0.88f).coerceAtLeast(1.1f)
+
+        kitchenPaint.color = config.topLineColor
+        kitchenPaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(30, 255)
+        kitchenPaint.strokeWidth = (config.lineWidth * 0.90f).coerceAtLeast(1.2f)
+
+        framePaint.color = config.middleLineColor
+        framePaint.alpha = (config.opacity * 0.45f).toInt().coerceIn(25, 160)
         framePaint.strokeWidth = (config.lineWidth * 0.75f).coerceAtLeast(1.0f)
     }
 
@@ -127,21 +146,32 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
-        // 1. Garis Panduan Foto Referensi (lengkap seluruh meja tanpa duplikasi)
+        // 1. Garis Panduan 62-segmen dengan warna berbeda untuk Lubang Atas, Lubang Bawah, dan Tengah
         if (config.showBankShotLines) {
             canvas.drawRect(config.left, config.top, config.right, config.bottom, framePaint)
 
             val segments = DiamondSystemCalculator.calculateReferenceSegments(config)
 
-            // Garis sekunder (teal) di layer bawah, garis utama di layer atas
+            // Layer bawah: garis tengah / bantu netral
             for (seg in segments) {
-                if (!seg.isSecondary) continue
-                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, secondaryPaint)
+                if (seg.category != LineCategory.MIDDLE_OR_GRID) continue
+                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, middleGridPaint)
             }
 
+            // Layer tengah: garis kitchen (L2-R2)
             for (seg in segments) {
-                if (seg.isSecondary) continue
-                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, primaryPaint)
+                if (seg.category != LineCategory.KITCHEN_LINE) continue
+                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, kitchenPaint)
+            }
+
+            // Layer atas: garis Lubang Bawah (Merah) & Lubang Atas (Cyan)
+            for (seg in segments) {
+                if (seg.category != LineCategory.BOTTOM_POCKET) continue
+                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, bottomPocketPaint)
+            }
+            for (seg in segments) {
+                if (seg.category != LineCategory.TOP_POCKET) continue
+                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, topPocketPaint)
             }
         }
 

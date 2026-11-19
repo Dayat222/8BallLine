@@ -11,6 +11,7 @@ import androidx.appcompat.view.ContextThemeWrapper
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import com.dayat.eightballline.R
+import com.dayat.eightballline.model.PocketFilter
 import com.dayat.eightballline.util.PreferencesManager
 import kotlin.math.abs
 
@@ -23,6 +24,13 @@ class FloatingMenuManager(
     private val onCalibrationModeChanged: (Boolean) -> Unit
 ) {
 
+    private data class ColorThemePreset(
+        val view: View,
+        val topColor: Int,
+        val bottomColor: Int,
+        val middleColor: Int
+    )
+
     private val themedContext: Context = ContextThemeWrapper(context, R.style.Theme_EightBallLine)
     private val menuView: View = LayoutInflater.from(themedContext).inflate(R.layout.view_floating_menu, null)
     private lateinit var layoutParams: WindowManager.LayoutParams
@@ -32,28 +40,45 @@ class FloatingMenuManager(
     private val btnMinimize: ImageView = menuView.findViewById(R.id.btnMinimize)
     private val switchLines: SwitchCompat = menuView.findViewById(R.id.switchLines)
 
+    private val btnFilterAll: TextView = menuView.findViewById(R.id.btnFilterAll)
+    private val btnFilterTop: TextView = menuView.findViewById(R.id.btnFilterTop)
+    private val btnFilterBottom: TextView = menuView.findViewById(R.id.btnFilterBottom)
+
     private val tvOpacityLabel: TextView = menuView.findViewById(R.id.tvOpacityLabel)
     private val seekBarOpacity: SeekBar = menuView.findViewById(R.id.seekBarOpacity)
     private val tvLineWidthLabel: TextView = menuView.findViewById(R.id.tvLineWidthLabel)
     private val seekBarLineWidth: SeekBar = menuView.findViewById(R.id.seekBarLineWidth)
 
-    private val btnThemeBlackTeal: View = menuView.findViewById(R.id.btnThemeBlackTeal)
-    private val btnThemeWhiteTeal: View = menuView.findViewById(R.id.btnThemeWhiteTeal)
-    private val btnThemeCyanGold: View = menuView.findViewById(R.id.btnThemeCyanGold)
-    private val btnThemeYellowGreen: View = menuView.findViewById(R.id.btnThemeYellowGreen)
-    private val btnThemeRedCyan: View = menuView.findViewById(R.id.btnThemeRedCyan)
+    private val btnThemeCyanRedBlack: View = menuView.findViewById(R.id.btnThemeCyanRedBlack)
+    private val btnThemeCyanRedWhite: View = menuView.findViewById(R.id.btnThemeCyanRedWhite)
+    private val btnThemeCyanYellowWhite: View = menuView.findViewById(R.id.btnThemeCyanYellowWhite)
+    private val btnThemeGreenRedYellow: View = menuView.findViewById(R.id.btnThemeGreenRedYellow)
+    private val btnThemeWhiteOrangeTeal: View = menuView.findViewById(R.id.btnThemeWhiteOrangeTeal)
 
     private val btnToggleCalibration: Button = menuView.findViewById(R.id.btnToggleCalibration)
     private val btnResetTableInOverlay: Button = menuView.findViewById(R.id.btnResetTableInOverlay)
     private val btnCloseOverlay: Button = menuView.findViewById(R.id.btnCloseOverlay)
 
+    private val filterButtons by lazy {
+        listOf(
+            btnFilterAll to PocketFilter.ALL,
+            btnFilterTop to PocketFilter.TOP_ONLY,
+            btnFilterBottom to PocketFilter.BOTTOM_ONLY
+        )
+    }
+
     private val colorThemes by lazy {
         listOf(
-            Triple(btnThemeBlackTeal, 0xFF111827.toInt(), 0xFF0D9488.toInt()),   // Hitam + Teal (persis foto)
-            Triple(btnThemeWhiteTeal, 0xFFFFFFFF.toInt(), 0xFF14B8A6.toInt()),   // Putih + Teal
-            Triple(btnThemeCyanGold, 0xFF00E5FF.toInt(), 0xFFF59E0B.toInt()),    // Cyan + Kuning
-            Triple(btnThemeYellowGreen, 0xFFFACC15.toInt(), 0xFF10B981.toInt()), // Kuning + Hijau
-            Triple(btnThemeRedCyan, 0xFFFB7185.toInt(), 0xFF38BDF8.toInt())      // Merah Rose + Biru Langit
+            // 1. Cyan (Atas), Merah (Bawah), Hitam (Tengah) - persis foto referensi
+            ColorThemePreset(btnThemeCyanRedBlack, 0xFF00E5FF.toInt(), 0xFFEF4444.toInt(), 0xFF111827.toInt()),
+            // 2. Cyan (Atas), Merah (Bawah), Putih (Tengah) - kontras tinggi di meja gelap
+            ColorThemePreset(btnThemeCyanRedWhite, 0xFF00E5FF.toInt(), 0xFFEF4444.toInt(), 0xFFFFFFFF.toInt()),
+            // 3. Cyan (Atas), Kuning (Bawah), Putih (Tengah)
+            ColorThemePreset(btnThemeCyanYellowWhite, 0xFF00E5FF.toInt(), 0xFFFACC15.toInt(), 0xFFFFFFFF.toInt()),
+            // 4. Hijau (Atas), Merah (Bawah), Kuning (Tengah)
+            ColorThemePreset(btnThemeGreenRedYellow, 0xFF10B981.toInt(), 0xFFEF4444.toInt(), 0xFFFACC15.toInt()),
+            // 5. Putih (Atas), Oranye (Bawah), Teal (Tengah)
+            ColorThemePreset(btnThemeWhiteOrangeTeal, 0xFFFFFFFF.toInt(), 0xFFF97316.toInt(), 0xFF14B8A6.toInt())
         )
     }
 
@@ -84,6 +109,7 @@ class FloatingMenuManager(
         }
 
         setupListeners()
+        setupFilterButtons()
         setupThemePicker()
         windowManager.addView(menuView, layoutParams)
     }
@@ -193,31 +219,74 @@ class FloatingMenuManager(
         }
     }
 
+    private fun setupFilterButtons() {
+        updateFilterHighlights()
+        for ((btn, filter) in filterButtons) {
+            btn.setOnClickListener {
+                overlayView.config.pocketFilter = filter
+                overlayView.invalidate()
+                prefs.saveConfig(overlayView.config)
+                updateFilterHighlights()
+            }
+        }
+    }
+
+    private fun updateFilterHighlights() {
+        val density = themedContext.resources.displayMetrics.density
+        val active = overlayView.config.pocketFilter
+        val topCol = overlayView.config.topLineColor
+        val botCol = overlayView.config.bottomLineColor
+
+        for ((btn, filter) in filterButtons) {
+            val isSelected = filter == active
+            val accent = when (filter) {
+                PocketFilter.TOP_ONLY -> topCol
+                PocketFilter.BOTTOM_ONLY -> botCol
+                PocketFilter.ALL -> 0xFFE2E8F0.toInt()
+            }
+            btn.setTextColor(accent)
+            btn.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = 5f * density
+                setColor(if (isSelected) 0xFF1F2937.toInt() else 0xFF111827.toInt())
+                setStroke(
+                    ((if (isSelected) 1.8f else 0.8f) * density).toInt(),
+                    if (isSelected) accent else 0x33FFFFFF
+                )
+            }
+        }
+    }
+
     private fun setupThemePicker() {
         updateThemeHighlights()
-        for ((view, primary, secondary) in colorThemes) {
-            view.setOnClickListener {
-                overlayView.config.lineColor = primary
-                overlayView.config.secondaryLineColor = secondary
+        for (preset in colorThemes) {
+            preset.view.setOnClickListener {
+                overlayView.config.topLineColor = preset.topColor
+                overlayView.config.bottomLineColor = preset.bottomColor
+                overlayView.config.middleLineColor = preset.middleColor
                 overlayView.invalidate()
                 prefs.saveConfig(overlayView.config)
                 updateThemeHighlights()
+                updateFilterHighlights()
             }
         }
     }
 
     private fun updateThemeHighlights() {
         val density = themedContext.resources.displayMetrics.density
-        val activePrimary = overlayView.config.lineColor
-        val activeSecondary = overlayView.config.secondaryLineColor
+        val activeTop = overlayView.config.topLineColor
+        val activeBottom = overlayView.config.bottomLineColor
+        val activeMiddle = overlayView.config.middleLineColor
 
-        for ((view, primary, secondary) in colorThemes) {
-            val isSelected = primary == activePrimary && secondary == activeSecondary
+        for (preset in colorThemes) {
+            val isSelected = preset.topColor == activeTop &&
+                    preset.bottomColor == activeBottom &&
+                    preset.middleColor == activeMiddle
             val borderColor = if (isSelected) Color.WHITE else 0x55FFFFFF
             val strokePx = ((if (isSelected) 2.2f else 1f) * density).toInt()
-            view.background = GradientDrawable(
+            preset.view.background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
-                intArrayOf(primary, secondary)
+                intArrayOf(preset.topColor, preset.bottomColor, preset.middleColor)
             ).apply {
                 shape = GradientDrawable.RECTANGLE
                 cornerRadius = 6f * density
@@ -230,7 +299,7 @@ class FloatingMenuManager(
         layoutBubble.visibility = View.GONE
         layoutExpandedPanel.visibility = View.VISIBLE
         val density = themedContext.resources.displayMetrics.density
-        val panelWidthPx = (216 * density).toInt()
+        val panelWidthPx = (224 * density).toInt()
         val screenH = overlayView.height.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
         val maxPanelHeight = (screenH * 0.82f).toInt()
         layoutExpandedPanel.measure(
