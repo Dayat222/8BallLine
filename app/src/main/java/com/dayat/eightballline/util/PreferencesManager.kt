@@ -26,10 +26,9 @@ class PreferencesManager(context: Context) {
             putFloat("table_bottom", config.bottom)
             putBoolean("has_saved_calibration", true)
             putString("table_orientation", config.orientation.name)
-            putInt("pocket_filter", config.pocketFilter.id)
-            putInt("top_line_color", config.topLineColor)
-            putInt("bottom_line_color", config.bottomLineColor)
-            putInt("middle_line_color", config.middleLineColor)
+            putInt("pocket_filter_v2", config.pocketFilter.id)
+            putInt("blue_line_color", config.blueLineColor)
+            putInt("red_line_color", config.redLineColor)
             putFloat("photo_line_width", config.lineWidth)
             putInt("photo_line_opacity_v2", config.opacity)
             putBoolean("show_lines", config.showBankShotLines)
@@ -38,7 +37,7 @@ class PreferencesManager(context: Context) {
     }
 
     fun updateLineColor(color: Int) {
-        prefs.edit().putInt("top_line_color", color).apply()
+        prefs.edit().putInt("blue_line_color", color).apply()
     }
 
     fun updateOrientation(orientation: TableOrientation) {
@@ -89,14 +88,13 @@ class PreferencesManager(context: Context) {
             bottom = defBottom
         }
 
-        val filterId = prefs.getInt("pocket_filter", PocketFilter.ALL.id)
+        val filterId = prefs.getInt("pocket_filter_v2", PocketFilter.ALL.id)
         val pocketFilter = PocketFilter.values().firstOrNull { it.id == filterId } ?: PocketFilter.ALL
 
-        val topLineColor = prefs.getInt("top_line_color", 0xFF00E5FF.toInt())
-        val bottomLineColor = prefs.getInt("bottom_line_color", 0xFFEF4444.toInt())
-        val middleLineColor = prefs.getInt("middle_line_color", 0xFF111827.toInt())
+        val blueLineColor = prefs.getInt("blue_line_color", 0xFF00D8FF.toInt())
+        val redLineColor = prefs.getInt("red_line_color", 0xFFEF4444.toInt())
         val lineWidth = prefs.getFloat("photo_line_width", 1.6f)
-        val opacity = prefs.getInt("photo_line_opacity_v2", 220)
+        val opacity = prefs.getInt("photo_line_opacity_v2", 225)
         val showLines = prefs.getBoolean("show_lines", true)
 
         return TableConfig(
@@ -106,9 +104,8 @@ class PreferencesManager(context: Context) {
             bottom = bottom,
             orientation = orientation,
             pocketFilter = pocketFilter,
-            topLineColor = topLineColor,
-            bottomLineColor = bottomLineColor,
-            middleLineColor = middleLineColor,
+            blueLineColor = blueLineColor,
+            redLineColor = redLineColor,
             lineWidth = lineWidth,
             opacity = opacity,
             showBankShotLines = showLines

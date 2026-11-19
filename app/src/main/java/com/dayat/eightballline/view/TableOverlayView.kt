@@ -27,22 +27,12 @@ class TableOverlayView(context: Context) : View(context) {
 
     var onCalibrationChanged: ((TableConfig) -> Unit)? = null
 
-    private val topPocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val bluePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
 
-    private val bottomPocketPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-    }
-
-    private val middleGridPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        strokeCap = Paint.Cap.ROUND
-    }
-
-    private val kitchenPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val redPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
@@ -119,24 +109,16 @@ class TableOverlayView(context: Context) : View(context) {
     }
 
     private fun updatePaints() {
-        topPocketPaint.color = config.topLineColor
-        topPocketPaint.alpha = config.opacity
-        topPocketPaint.strokeWidth = config.lineWidth
+        bluePaint.color = config.blueLineColor
+        bluePaint.alpha = config.opacity
+        bluePaint.strokeWidth = config.lineWidth
 
-        bottomPocketPaint.color = config.bottomLineColor
-        bottomPocketPaint.alpha = config.opacity
-        bottomPocketPaint.strokeWidth = config.lineWidth
+        redPaint.color = config.redLineColor
+        redPaint.alpha = config.opacity
+        redPaint.strokeWidth = config.lineWidth
 
-        middleGridPaint.color = config.middleLineColor
-        middleGridPaint.alpha = (config.opacity * 0.85f).toInt().coerceIn(30, 255)
-        middleGridPaint.strokeWidth = (config.lineWidth * 0.88f).coerceAtLeast(1.1f)
-
-        kitchenPaint.color = config.topLineColor
-        kitchenPaint.alpha = (config.opacity * 0.90f).toInt().coerceIn(30, 255)
-        kitchenPaint.strokeWidth = (config.lineWidth * 0.90f).coerceAtLeast(1.2f)
-
-        framePaint.color = config.middleLineColor
-        framePaint.alpha = (config.opacity * 0.45f).toInt().coerceIn(25, 160)
+        framePaint.color = config.blueLineColor
+        framePaint.alpha = (config.opacity * 0.40f).toInt().coerceIn(20, 140)
         framePaint.strokeWidth = (config.lineWidth * 0.75f).coerceAtLeast(1.0f)
     }
 
@@ -146,32 +128,14 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
-        // 1. Garis Panduan 62-segmen dengan warna berbeda untuk Lubang Atas, Lubang Bawah, dan Tengah
+        // 1. Garis Panduan 62-segmen dengan tepat 2 warna (Biru & Merah) persis foto referensi
         if (config.showBankShotLines) {
             canvas.drawRect(config.left, config.top, config.right, config.bottom, framePaint)
 
             val segments = DiamondSystemCalculator.calculateReferenceSegments(config)
-
-            // Layer bawah: garis tengah / bantu netral
             for (seg in segments) {
-                if (seg.category != LineCategory.MIDDLE_OR_GRID) continue
-                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, middleGridPaint)
-            }
-
-            // Layer tengah: garis kitchen (L2-R2)
-            for (seg in segments) {
-                if (seg.category != LineCategory.KITCHEN_LINE) continue
-                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, kitchenPaint)
-            }
-
-            // Layer atas: garis Lubang Bawah (Merah) & Lubang Atas (Cyan)
-            for (seg in segments) {
-                if (seg.category != LineCategory.BOTTOM_POCKET) continue
-                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, bottomPocketPaint)
-            }
-            for (seg in segments) {
-                if (seg.category != LineCategory.TOP_POCKET) continue
-                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, topPocketPaint)
+                val paint = if (seg.category == LineCategory.BLUE) bluePaint else redPaint
+                canvas.drawLine(seg.p1.x, seg.p1.y, seg.p2.x, seg.p2.y, paint)
             }
         }
 

@@ -2,8 +2,8 @@ package com.dayat.eightballline.model
 
 enum class PocketFilter(val id: Int, val displayName: String) {
     ALL(0, "Semua"),
-    TOP_ONLY(1, "Lubang Atas"),
-    BOTTOM_ONLY(2, "Lubang Bawah")
+    BLUE_ONLY(1, "Biru"),
+    RED_ONLY(2, "Merah")
 }
 
 enum class TableOrientation(val displayName: String) {
@@ -20,11 +20,10 @@ data class TableConfig(
     var bottom: Float = 0f,
     var orientation: TableOrientation = TableOrientation.LANDSCAPE,
     var pocketFilter: PocketFilter = PocketFilter.ALL,
-    var topLineColor: Int = 0xFF00E5FF.toInt(),    // Cyan (Lubang Atas + garis kitchen, sesuai foto referensi)
-    var bottomLineColor: Int = 0xFFEF4444.toInt(), // Merah (Lubang Bawah, sesuai foto referensi)
-    var middleLineColor: Int = 0xFF111827.toInt(), // Hitam (Lubang Tengah & Garis Tengah, sesuai foto referensi)
+    var blueLineColor: Int = 0xFF00D8FF.toInt(), // Biru/Cyan (sesuai foto referensi)
+    var redLineColor: Int = 0xFFEF4444.toInt(),  // Merah (sesuai foto referensi)
     var lineWidth: Float = 1.6f,
-    var opacity: Int = 220, // 0 - 255
+    var opacity: Int = 225, // 0 - 255
     var showBankShotLines: Boolean = true
 ) {
     val width: Float get() = (right - left).coerceAtLeast(10f)

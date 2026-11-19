@@ -23,7 +23,7 @@
     <!-- Expanded Floating Control Panel -->
     <ScrollView
         android:id="@+id/layoutExpandedPanel"
-        android:layout_width="224dp"
+        android:layout_width="220dp"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_floating_card"
         android:scrollbars="none"
@@ -87,12 +87,12 @@
                     android:scaleY="0.82" />
             </LinearLayout>
 
-            <!-- Filter Arah Lubang (Semua / Atas / Bawah) -->
+            <!-- Filter Warna Garis (Semua / Biru / Merah) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                android:text="Fokus Lubang Tujuan:"
+                android:text="Filter Garis:"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -115,24 +115,24 @@
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/btnFilterTop"
+                    android:id="@+id/btnFilterBlue"
                     android:layout_width="0dp"
                     android:layout_height="25dp"
                     android:layout_marginEnd="3dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="▲ Atas"
+                    android:text="Biru"
                     android:textColor="@color/neon_cyan"
                     android:textSize="9.5sp"
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/btnFilterBottom"
+                    android:id="@+id/btnFilterRed"
                     android:layout_width="0dp"
                     android:layout_height="25dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="▼ Bawah"
+                    android:text="Merah"
                     android:textColor="@color/accent_red"
                     android:textSize="9.5sp"
                     android:textStyle="bold" />
@@ -144,7 +144,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="Kecerahan / Opasitas (86%)"
+                android:text="Kecerahan / Opasitas (88%)"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -154,7 +154,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:max="255"
-                android:progress="220" />
+                android:progress="225" />
 
             <!-- Line Width Slider -->
             <TextView
@@ -174,12 +174,12 @@
                 android:max="50"
                 android:progress="6" />
 
-            <!-- Preset Tema Warna (Atas | Bawah | Tengah) -->
+            <!-- Preset Tema 2-Warna (Biru | Merah) -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                android:text="Tema Warna (Atas · Bawah · Tengah):"
+                android:text="Tema 2 Warna Garis:"
                 android:textColor="@color/text_secondary"
                 android:textSize="10sp" />
 
@@ -191,35 +191,35 @@
                 android:orientation="horizontal">
 
                 <View
-                    android:id="@+id/btnThemeCyanRedBlack"
+                    android:id="@+id/btnThemeCyanRed"
                     android:layout_width="0dp"
                     android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1" />
 
                 <View
-                    android:id="@+id/btnThemeCyanRedWhite"
+                    android:id="@+id/btnThemeDeepBlueRed"
                     android:layout_width="0dp"
                     android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1" />
 
                 <View
-                    android:id="@+id/btnThemeCyanYellowWhite"
+                    android:id="@+id/btnThemeCyanOrange"
                     android:layout_width="0dp"
                     android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1" />
 
                 <View
-                    android:id="@+id/btnThemeGreenRedYellow"
+                    android:id="@+id/btnThemeGreenRed"
                     android:layout_width="0dp"
                     android:layout_height="20dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1" />
 
                 <View
-                    android:id="@+id/btnThemeWhiteOrangeTeal"
+                    android:id="@+id/btnThemeWhiteYellow"
                     android:layout_width="0dp"
                     android:layout_height="20dp"
                     android:layout_weight="1" />
