@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
+import android.util.DisplayMetrics
 import android.view.*
 import android.widget.*
 import androidx.appcompat.view.ContextThemeWrapper
@@ -21,7 +22,8 @@ class FloatingMenuManager(
     private val overlayView: TableOverlayView,
     private val prefs: PreferencesManager,
     private val onStopServiceRequested: () -> Unit,
-    private val onCalibrationModeChanged: (Boolean) -> Unit
+    private val onCalibrationModeChanged: (Boolean) -> Unit,
+    private val onTableBoundsChanged: () -> Unit = {}
 ) {
 
     private data class ColorThemePreset(
@@ -172,14 +174,18 @@ class FloatingMenuManager(
         }
 
         btnResetTableInOverlay.setOnClickListener {
-            val w = overlayView.width.takeIf { it > 0 } ?: 1920
-            val h = overlayView.height.takeIf { it > 0 } ?: 1080
+            val metrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(metrics)
+            val w = metrics.widthPixels.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.widthPixels
+            val h = metrics.heightPixels.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
             val reset = prefs.resetCalibration(w, h, overlayView.config.orientation)
             overlayView.config.left = reset.left
             overlayView.config.top = reset.top
             overlayView.config.right = reset.right
             overlayView.config.bottom = reset.bottom
             overlayView.invalidate()
+            onTableBoundsChanged()
         }
 
         seekBarOpacity.progress = overlayView.config.opacity
@@ -295,7 +301,7 @@ class FloatingMenuManager(
         layoutExpandedPanel.visibility = View.VISIBLE
         val density = themedContext.resources.displayMetrics.density
         val panelWidthPx = (220 * density).toInt()
-        val screenH = overlayView.height.takeIf { it > 0 } ?: themedContext.resources.displayMetrics.heightPixels
+        val screenH = themedContext.resources.displayMetrics.heightPixels
         val maxPanelHeight = (screenH * 0.82f).toInt()
         layoutExpandedPanel.measure(
             View.MeasureSpec.makeMeasureSpec(panelWidthPx, View.MeasureSpec.EXACTLY),

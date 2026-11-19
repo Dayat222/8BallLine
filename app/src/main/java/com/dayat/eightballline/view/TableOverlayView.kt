@@ -25,6 +25,9 @@ class TableOverlayView(context: Context) : View(context) {
             invalidate()
         }
 
+    var windowOffsetX: Float = 0f
+    var windowOffsetY: Float = 0f
+
     var onCalibrationChanged: ((TableConfig) -> Unit)? = null
 
     private val bluePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -128,6 +131,9 @@ class TableOverlayView(context: Context) : View(context) {
 
         if (config.width <= 20f || config.height <= 20f) return
 
+        canvas.save()
+        canvas.translate(-windowOffsetX, -windowOffsetY)
+
         // 1. Garis Panduan 62-segmen dengan tepat 2 warna (Biru & Merah) persis foto referensi
         if (config.showBankShotLines) {
             canvas.drawRect(config.left, config.top, config.right, config.bottom, framePaint)
@@ -191,6 +197,8 @@ class TableOverlayView(context: Context) : View(context) {
                 midX, midY + 65f, textPaint
             )
         }
+
+        canvas.restore()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
